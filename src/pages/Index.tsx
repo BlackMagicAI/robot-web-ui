@@ -38,7 +38,6 @@ const Index = () => {
         {/* Center Column - Camera Feed */}
         <div className="lg:col-span-2">
           <CameraViewer 
-            isConnected={isRobotConnected} 
             title="Main Camera Feed" 
           />
         </div>
