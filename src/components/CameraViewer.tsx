@@ -3,19 +3,54 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Video, VideoOff, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
+import ReactPlayer from 'react-player'
 
 interface CameraViewerProps {
-  isConnected?: boolean;
   title?: string;
 }
 
-export const CameraViewer = ({ isConnected = false, title = "Robot Camera" }: CameraViewerProps) => {
+export const CameraViewer = ({title = "Robot Camera" }: CameraViewerProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [zoom, setZoom] = useState(1);
+  const [isConnected, setIsConnected] = useState(false);
+  const src = 'https://youtu.be/Vy_RPd0rblI?si=ofdeyjginEt6keJp&t=15'; // TODO replace with dynamically update value from server
+
+  const initialState = {
+    src: undefined,
+    pip: false,
+    playing: false,
+    controls: false,
+    light: false,
+    volume: 1,
+    muted: false,
+    played: 0,
+    loaded: 0,
+    duration: 0,
+    playbackRate: 1.0,
+    loop: false,
+    seeking: false,
+    loadedSeconds: 0,
+    playedSeconds: 0,
+  };
+
+
+  const [state, setState] = useState(initialState);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
   const handleResetView = () => setZoom(1);
+
+  const changeSource = () => {
+    setState(prevState => ({ ...prevState, 
+      src: prevState.src == undefined ? src : undefined})); // Update the URL
+  };
+
+  const handlePlay = () => {
+    changeSource();
+    setState(prevState => ({ ...prevState, playing : !prevState.playing}));
+    setIsRecording(!isRecording);
+    setIsConnected(!isConnected);
+  };  
 
   return (
     <Card className="p-4 h-full">
@@ -30,7 +65,7 @@ export const CameraViewer = ({ isConnected = false, title = "Robot Camera" }: Ca
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => setIsRecording(!isRecording)}
+            onClick={() => handlePlay()}
             className={isRecording ? "text-destructive" : ""}
           >
             {isRecording ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
@@ -46,7 +81,6 @@ export const CameraViewer = ({ isConnected = false, title = "Robot Camera" }: Ca
           </Button>
         </div>
       </div>
-      
       <div className="relative bg-muted rounded-lg overflow-hidden aspect-video">
         {isConnected ? (
           <div
@@ -55,8 +89,18 @@ export const CameraViewer = ({ isConnected = false, title = "Robot Camera" }: Ca
           >
             {/* Camera feed placeholder - in real app this would be video stream */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900">
+              <ReactPlayer
+                slot="media"
+                src={state.src}
+                playing={state.playing}
+                controls={true}
+                style={{
+                  width: "100%",
+                  height: "100%"
+                }}
+              ></ReactPlayer>
               {/* Grid overlay for realistic effect */}
-              <div className="absolute inset-0 opacity-20">
+              {/* <div className="absolute inset-0 opacity-20">
                 <div className="w-full h-full" style={{
                   backgroundImage: `
                     linear-gradient(rgba(0,195,255,0.1) 1px, transparent 1px),
@@ -64,24 +108,24 @@ export const CameraViewer = ({ isConnected = false, title = "Robot Camera" }: Ca
                   `,
                   backgroundSize: '20px 20px'
                 }} />
-              </div>
-              
+              </div> */}
+
               {/* Crosshair */}
-              <div className="absolute inset-0 flex items-center justify-center">
+              {/* <div className="absolute inset-0 flex items-center justify-center">
                 <div className="relative">
                   <div className="w-8 h-px bg-primary opacity-60" />
                   <div className="w-px h-8 bg-primary opacity-60 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
                 </div>
-              </div>
-              
+              </div> */}
+
               {/* Status overlay */}
               <div className="absolute top-2 left-2 text-xs text-primary font-mono">
                 {isRecording && <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                  REC
+                  Streaming
                 </div>}
               </div>
-              
+
               <div className="absolute bottom-2 right-2 text-xs text-muted-foreground font-mono">
                 ZOOM: {zoom.toFixed(1)}x
               </div>
