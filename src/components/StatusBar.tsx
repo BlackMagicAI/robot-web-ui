@@ -9,6 +9,7 @@ import {
   MapPin,
   Thermometer
 } from 'lucide-react';
+import { UserAccountMenu } from './UserAccountMenu';
 
 interface StatusBarProps {
   isConnected?: boolean;
@@ -98,6 +99,9 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
               {currentTime.toLocaleTimeString()}
             </span>
           </div>
+
+          {/* User Account Menu */}
+          <UserAccountMenu />
         </div>
       </div>
     </div>
