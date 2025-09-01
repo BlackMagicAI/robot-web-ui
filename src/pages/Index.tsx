@@ -36,17 +36,17 @@ const Index = () => {
       
       {/* Main Content */}
       <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-64px)]">
-        {/* Left Column - Movement Control & Control Panel */}
+        {/* Left Column - Control Panel */}
         <div className="space-y-4">
-          <VirtualJoystick onMove={handleJoystickMove} size={180} />
           <ControlPanel />
         </div>
         
-        {/* Middle Column - Camera Feed */}
-        <div className="lg:col-span-1">
+        {/* Middle Column - Camera Feed & Movement Control */}
+        <div className="space-y-4">
           <CameraViewer 
             title="Main Camera Feed" 
           />
+          <VirtualJoystick onMove={handleJoystickMove} size={180} />
         </div>
         
         {/* Right Column - Console & Room Management */}
