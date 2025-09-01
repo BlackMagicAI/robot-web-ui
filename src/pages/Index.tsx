@@ -35,37 +35,35 @@ const Index = () => {
       <StatusBar isConnected={isRobotConnected} />
       
       {/* Main Content */}
-      <div className="p-4 grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-4 h-[calc(100vh-64px)]">
-        {/* Left Column - Room Selection & Joystick */}
+      <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-64px)]">
+        {/* Left Column - Room Management & Console */}
         <div className="space-y-4">
           <RoomSelect onRoomSelect={handleRoomSelect} selectedRoom={selectedRoom} />
-          <VirtualJoystick onMove={handleJoystickMove} size={180} />
-        </div>
-        
-        {/* Second Column - Room Participants & Controls */}
-        <div className="space-y-4">
+          
           {selectedRoom ? (
             <RoomParticipants room={selectedRoom} />
           ) : (
-            <div className="h-[300px] border-2 border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground">
+            <div className="h-[250px] border-2 border-dashed border-border rounded-lg flex items-center justify-center text-muted-foreground">
               <div className="text-center">
                 <p className="text-sm">Select a room to see participants</p>
               </div>
             </div>
           )}
-          <ControlPanel />
+          
+          <MessagePanel />
         </div>
         
-        {/* Third Column - Camera Feed */}
-        <div className="lg:col-span-1 xl:col-span-1">
+        {/* Middle Column - Camera Feed */}
+        <div className="lg:col-span-1">
           <CameraViewer 
             title="Main Camera Feed" 
           />
         </div>
         
-        {/* Fourth Column - Messages */}
-        <div className="lg:col-span-1 xl:col-span-1">
-          <MessagePanel />
+        {/* Right Column - Controls & Joystick */}
+        <div className="space-y-4">
+          <ControlPanel />
+          <VirtualJoystick onMove={handleJoystickMove} size={180} />
         </div>
       </div>
 
