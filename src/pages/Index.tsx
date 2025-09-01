@@ -39,19 +39,19 @@ const Index = () => {
         {/* Left Column - Control Panel */}
         <div className="space-y-4">
           <ControlPanel />
+          <MessagePanel />
         </div>
         
         {/* Middle Column - Camera Feed & Movement Control */}
         <div className="space-y-4">
           <CameraViewer 
-            title="Main Camera Feed" 
+            title="Main Camera Feed"
           />
           <VirtualJoystick onMove={handleJoystickMove} size={180} />
         </div>
         
         {/* Right Column - Console & Room Management */}
-        <div className="space-y-4">
-          <MessagePanel />
+        <div className="space-y-4">         
           <RoomSelect onRoomSelect={handleRoomSelect} selectedRoom={selectedRoom} />
           
           {selectedRoom ? (

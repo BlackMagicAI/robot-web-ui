@@ -53,7 +53,7 @@ export const CameraViewer = ({title = "Robot Camera" }: CameraViewerProps) => {
   };  
 
   return (
-    <Card className="p-4 h-full">
+    <Card className="p-4 h-fit-content">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="font-medium">{title}</h3>

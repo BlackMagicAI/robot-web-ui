@@ -98,7 +98,7 @@ const getDifficultyColor = (difficulty: Room['difficulty']) => {
 
 export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
   return (
-    <Card className="h-full">
+    <Card className="h-fit-content">
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Users className="h-5 w-5" />

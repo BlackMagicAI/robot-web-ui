@@ -119,7 +119,7 @@ export const MessagePanel = () => {
   }, [messages]);
 
   return (
-    <Card className="p-4 h-full flex flex-col">
+    <Card className="p-4 h-fit-content flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Terminal className="w-4 h-4" />

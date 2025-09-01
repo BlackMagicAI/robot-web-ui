@@ -25,7 +25,7 @@ export const ControlPanel = () => {
   const [isRunning, setIsRunning] = useState(false);
 
   return (
-    <Card className="p-4 h-full">
+    <Card className="p-4 h-fit-content">
       <div className="space-y-6">
         <div>
           <h3 className="font-medium mb-4 flex items-center gap-2">
