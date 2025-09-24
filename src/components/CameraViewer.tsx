@@ -13,7 +13,7 @@ export const CameraViewer = ({title = "Robot Camera" }: CameraViewerProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
-  const src = 'https://youtu.be/Vy_RPd0rblI?si=ofdeyjginEt6keJp&t=15'; // TODO replace with dynamically update value from server
+  const src = 'http://192.168.1.226:81/stream';//'https://youtu.be/Vy_RPd0rblI?si=ofdeyjginEt6keJp&t=15'; // TODO replace with dynamically update value from server
 
   const initialState = {
     src: undefined,
@@ -89,7 +89,7 @@ export const CameraViewer = ({title = "Robot Camera" }: CameraViewerProps) => {
           >
             {/* Camera feed placeholder - in real app this would be video stream */}
             <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900">
-              <ReactPlayer
+              {/* <ReactPlayer
                 slot="media"
                 src={state.src}
                 playing={state.playing}
@@ -98,7 +98,8 @@ export const CameraViewer = ({title = "Robot Camera" }: CameraViewerProps) => {
                   width: "100%",
                   height: "100%"
                 }}
-              ></ReactPlayer>
+              ></ReactPlayer> */}
+              <img id="stream" src="http://192.168.1.226:81/stream"></img>
               {/* Grid overlay for realistic effect */}
               {/* <div className="absolute inset-0 opacity-20">
                 <div className="w-full h-full" style={{
