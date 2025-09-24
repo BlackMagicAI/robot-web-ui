@@ -10,12 +10,14 @@ import {
   Thermometer
 } from 'lucide-react';
 import { UserAccountMenu } from './UserAccountMenu';
+import { useGameServer } from '@/hooks/useGameServer';
 
 interface StatusBarProps {
   isConnected?: boolean;
 }
 
 export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
+  const { isConnected: gameServerConnected, isConnecting } = useGameServer();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [battery] = useState(65);
   const [signal] = useState(85);
@@ -46,7 +48,7 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
     <div className="bg-card border-b border-border px-4 py-2">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          {/* Connection Status */}
+          {/* Robot Connection Status */}
           <div className="flex items-center gap-2">
             {isConnected ? (
               <Wifi className="w-4 h-4 text-success" />
@@ -54,7 +56,24 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
             <Badge variant={isConnected ? "default" : "destructive"} className="text-xs">
-              {isConnected ? "CONNECTED" : "DISCONNECTED"}
+              ROBOT: {isConnected ? "CONNECTED" : "DISCONNECTED"}
+            </Badge>
+          </div>
+
+          {/* Game Server Connection Status */}
+          <div className="flex items-center gap-2">
+            {gameServerConnected ? (
+              <Wifi className="w-4 h-4 text-success" />
+            ) : isConnecting ? (
+              <Wifi className="w-4 h-4 text-warning animate-pulse" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-destructive" />
+            )}
+            <Badge 
+              variant={gameServerConnected ? "default" : isConnecting ? "secondary" : "destructive"} 
+              className="text-xs"
+            >
+              SERVER: {gameServerConnected ? "CONNECTED" : isConnecting ? "CONNECTING..." : "DISCONNECTED"}
             </Badge>
           </div>
 
