@@ -129,9 +129,11 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
     }
   }, [isConnected, rooms]); // Dependency array: runs when myObject changes
 
+
   const handleRoomSelect = (room: Room) => {
     // Call the original callback
     onRoomSelect(room);
+
   };
 
   return (
@@ -153,7 +155,7 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
                     ? 'border-primary bg-primary/5' 
                     : 'border-border'
                 }`}
-                onClick={() => onRoomSelect(room)}
+                onClick={() => handleRoomSelect(room)}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
