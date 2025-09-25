@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users, Zap, Shield, Globe } from 'lucide-react';
+import { useGameServer } from '@/hooks/useGameServer';
 
 export interface Room {
   id: string;
@@ -97,6 +98,21 @@ const getDifficultyColor = (difficulty: Room['difficulty']) => {
 };
 
 export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
+  const { sendCommand, isConnected } = useGameServer();
+
+  const handleRoomSelect = (room: Room) => {
+    // Call the original callback
+    onRoomSelect(room);
+    
+    // Send command to game server if connected
+    if (isConnected) {
+      sendCommand('joinRoom', { 
+        roomId: room.id, 
+        roomName: room.name,
+        roomType: room.type 
+      });
+    }
+  };
   return (
     <Card className="h-fit-content">
       <CardHeader>
@@ -116,7 +132,7 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
                     ? 'border-primary bg-primary/5' 
                     : 'border-border'
                 }`}
-                onClick={() => onRoomSelect(room)}
+                onClick={() => handleRoomSelect(room)}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex items-center gap-2">
