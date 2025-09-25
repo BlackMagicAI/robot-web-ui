@@ -21,7 +21,7 @@ interface Profile {
 }
 
 export const UserAccountMenu = () => {
-  const { user, signOut } = useAuth();
+  const { user, isGuest, guestUsername, signOut } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -75,6 +75,7 @@ export const UserAccountMenu = () => {
   };
 
   const getDisplayName = () => {
+    if (isGuest) return guestUsername || 'Guest';
     if (profile?.display_name) return profile.display_name;
     if (user?.email) return user.email.split('@')[0];
     return 'User';
@@ -85,7 +86,7 @@ export const UserAccountMenu = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  if (!user) {
+  if (!user && !isGuest) {
     return (
       <Button variant="ghost" size="sm" onClick={handleSignIn} className="gap-2">
         <LogIn className="w-4 h-4" />
@@ -110,7 +111,7 @@ export const UserAccountMenu = () => {
           <div className="flex flex-col space-y-1">
             <p className="text-sm font-medium leading-none">{getDisplayName()}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user.email}
+              {isGuest ? 'Guest User' : user?.email}
             </p>
           </div>
         </DropdownMenuLabel>

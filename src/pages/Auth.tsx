@@ -15,16 +15,17 @@ const Auth = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
-  const { signIn, signUp, user } = useAuth();
+  const [guestUsername, setGuestUsername] = useState('');
+  const { signIn, signUp, signInAsGuest, user, isGuest } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
 
   // Redirect if already authenticated
   useEffect(() => {
-    if (user) {
+    if (user || isGuest) {
       navigate('/');
     }
-  }, [user, navigate]);
+  }, [user, isGuest, navigate]);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -71,6 +72,29 @@ const Auth = () => {
     setIsLoading(false);
   };
 
+  const handleGuestSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    
+    const { error } = await signInAsGuest(guestUsername);
+    
+    if (error) {
+      toast({
+        title: "Guest Sign In Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } else {
+      toast({
+        title: "Welcome!",
+        description: `Signed in as ${guestUsername || 'Guest'}.`
+      });
+      navigate('/');
+    }
+    
+    setIsLoading(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/50 to-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-4">
@@ -92,9 +116,10 @@ const Auth = () => {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
+                <TabsTrigger value="guest">Guest</TabsTrigger>
               </TabsList>
               
               <TabsContent value="signin" className="space-y-4">
@@ -165,6 +190,25 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign Up
+                  </Button>
+                </form>
+              </TabsContent>
+              
+              <TabsContent value="guest" className="space-y-4">
+                <form onSubmit={handleGuestSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="guest-username">Username (Optional)</Label>
+                    <Input
+                      id="guest-username"
+                      type="text"
+                      value={guestUsername}
+                      onChange={(e) => setGuestUsername(e.target.value)}
+                      placeholder="Enter a username"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Sign In as Guest
                   </Button>
                 </form>
               </TabsContent>

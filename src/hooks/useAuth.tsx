@@ -6,8 +6,11 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isGuest: boolean;
+  guestUsername?: string;
   signUp: (email: string, password: string, displayName?: string) => Promise<{ error: any }>;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signInAsGuest: (username?: string) => Promise<{ error: any }>;
   signOut: () => Promise<{ error: any }>;
 }
 
@@ -29,6 +32,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isGuest, setIsGuest] = useState(false);
+  const [guestUsername, setGuestUsername] = useState<string | undefined>();
 
   useEffect(() => {
     // Set up auth state listener
@@ -74,7 +79,19 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     return { error };
   };
 
+  const signInAsGuest = async (username?: string) => {
+    setIsGuest(true);
+    setGuestUsername(username || 'Guest');
+    setLoading(false);
+    return { error: null };
+  };
+
   const signOut = async () => {
+    if (isGuest) {
+      setIsGuest(false);
+      setGuestUsername(undefined);
+      return { error: null };
+    }
     const { error } = await supabase.auth.signOut();
     return { error };
   };
@@ -83,8 +100,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     user,
     session,
     loading,
+    isGuest,
+    guestUsername,
     signUp,
     signIn,
+    signInAsGuest,
     signOut
   };
 
