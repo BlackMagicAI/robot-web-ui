@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Users, Zap, Shield, Globe } from 'lucide-react';
+import { useGameServer } from '@/hooks/useGameServer';
 
 export interface Room {
   id: string;
@@ -20,53 +21,53 @@ interface RoomSelectProps {
   selectedRoom?: Room;
 }
 
-const mockRooms: Room[] = [
-  {
-    id: 'room-1',
-    name: 'Training Ground Alpha',
-    description: 'Perfect for beginners to learn robot control basics',
-    playerCount: 3,
-    maxPlayers: 8,
-    difficulty: 'Easy',
-    type: 'Training'
-  },
-  {
-    id: 'room-2', 
-    name: 'Combat Arena Beta',
-    description: 'Intense PvP battles with advanced combat systems',
-    playerCount: 12,
-    maxPlayers: 16,
-    difficulty: 'Hard',
-    type: 'PvP'
-  },
-  {
-    id: 'room-3',
-    name: 'Exploration Zone Gamma',
-    description: 'Cooperative exploration of unknown territories',
-    playerCount: 6,
-    maxPlayers: 10,
-    difficulty: 'Medium',
-    type: 'Exploration'
-  },
-  {
-    id: 'room-4',
-    name: 'Defense Station Delta',
-    description: 'Team up to defend against AI-controlled enemies',
-    playerCount: 8,
-    maxPlayers: 12,
-    difficulty: 'Medium',
-    type: 'PvE'
-  },
-  {
-    id: 'room-5',
-    name: 'Elite Championship',
-    description: 'High-stakes tournament for experienced pilots',
-    playerCount: 15,
-    maxPlayers: 20,
-    difficulty: 'Hard',
-    type: 'PvP'
-  }
-];
+//var mockRooms: Room[] = [
+  // {
+  //   id: 'room-1',
+  //   name: 'Training Ground Alpha',
+  //   description: 'Perfect for beginners to learn robot control basics',
+  //   playerCount: 3,
+  //   maxPlayers: 8,
+  //   difficulty: 'Easy',
+  //   type: 'Training'
+  // },
+  // {
+  //   id: 'room-2', 
+  //   name: 'Combat Arena Beta',
+  //   description: 'Intense PvP battles with advanced combat systems',
+  //   playerCount: 12,
+  //   maxPlayers: 16,
+  //   difficulty: 'Hard',
+  //   type: 'PvP'
+  // },
+  // {
+  //   id: 'room-3',
+  //   name: 'Exploration Zone Gamma',
+  //   description: 'Cooperative exploration of unknown territories',
+  //   playerCount: 6,
+  //   maxPlayers: 10,
+  //   difficulty: 'Medium',
+  //   type: 'Exploration'
+  // },
+  // {
+  //   id: 'room-4',
+  //   name: 'Defense Station Delta',
+  //   description: 'Team up to defend against AI-controlled enemies',
+  //   playerCount: 8,
+  //   maxPlayers: 12,
+  //   difficulty: 'Medium',
+  //   type: 'PvE'
+  // },
+  // {
+  //   id: 'room-5',
+  //   name: 'Elite Championship',
+  //   description: 'High-stakes tournament for experienced pilots',
+  //   playerCount: 15,
+  //   maxPlayers: 20,
+  //   difficulty: 'Hard',
+  //   type: 'PvP'
+  // }
+//];
 
 const getRoomIcon = (type: Room['type']) => {
   switch (type) {
@@ -97,6 +98,42 @@ const getDifficultyColor = (difficulty: Room['difficulty']) => {
 };
 
 export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
+
+  const { isConnected, rooms } = useGameServer();
+
+  const [mockRooms, setMockRooms] = useState<Room[] | []>([]);
+  var roomData: Room[] = [];
+
+  useEffect(() => {
+    if (isConnected) { // Check if myObject is not null before using it
+      console.log('Room connect%%%%%%');
+      // Perform actions with the updated myObject here      
+      if(Array.isArray(rooms) && rooms.length > 0){
+        for(var r in rooms){        
+            const obj: Room = {
+              id: rooms[r].id.toString(),
+              name: rooms[r].name,
+              description: 'Robot control room',
+              playerCount: rooms[r].userCount,
+              maxPlayers: rooms[r].maxUsers,
+              difficulty: 'Easy',
+              type: 'Exploration'
+            }
+            roomData.push(obj);
+            console.log(obj);
+         
+        }
+        setMockRooms(roomData);
+      }
+        
+    }
+  }, [isConnected, rooms]); // Dependency array: runs when myObject changes
+
+  const handleRoomSelect = (room: Room) => {
+    // Call the original callback
+    onRoomSelect(room);
+  };
+
   return (
     <Card className="h-fit-content">
       <CardHeader>

@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useGameServer } from '@/hooks/useGameServer';
 
 const Auth = () => {
   const [isLoading, setIsLoading] = useState(false);
@@ -19,6 +20,7 @@ const Auth = () => {
   const { signIn, signUp, signInAsGuest, user, isGuest } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { isConnected, connect } = useGameServer();
 
   // Redirect if already authenticated
   useEffect(() => {
@@ -31,12 +33,12 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await signIn(email, password);
-    
+  const { error } = await signIn(email, password);
+  
     if (error) {
       toast({
         title: "Sign In Failed",
-        description: error.message,
+        description: "Hey", //error.message,
         variant: "destructive"
       });
     } else {
@@ -76,12 +78,16 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error } = await signInAsGuest(guestUsername);
-    
+    //const { error } = await signInAsGuest(guestUsername);
+    console.log("testing1234"); 
+    await connect();
+    console.log("testing!!!!!");
+    const error = false;
+
     if (error) {
       toast({
         title: "Guest Sign In Failed",
-        description: error.message,
+        description: "Hey", //error.message,
         variant: "destructive"
       });
     } else {
@@ -117,11 +123,30 @@ const Auth = () => {
           <CardContent>
             <Tabs defaultValue="signin" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
                 <TabsTrigger value="guest">Guest</TabsTrigger>
+                <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>               
               </TabsList>
-              
+
+              <TabsContent value="guest" className="space-y-4">
+                <form onSubmit={handleGuestSignIn} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="guest-username">Username (Optional)</Label>
+                    <Input
+                      id="guest-username"
+                      type="text"
+                      value={guestUsername}
+                      onChange={(e) => setGuestUsername(e.target.value)}
+                      placeholder="Enter a username"
+                    />
+                  </div>
+                  <Button type="submit" className="w-full" disabled={isLoading}>
+                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Sign In as Guest
+                  </Button>
+                </form>
+              </TabsContent>
+
               <TabsContent value="signin" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
@@ -190,25 +215,6 @@ const Auth = () => {
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Sign Up
-                  </Button>
-                </form>
-              </TabsContent>
-              
-              <TabsContent value="guest" className="space-y-4">
-                <form onSubmit={handleGuestSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="guest-username">Username (Optional)</Label>
-                    <Input
-                      id="guest-username"
-                      type="text"
-                      value={guestUsername}
-                      onChange={(e) => setGuestUsername(e.target.value)}
-                      placeholder="Enter a username"
-                    />
-                  </div>
-                  <Button type="submit" className="w-full" disabled={isLoading}>
-                    {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In as Guest
                   </Button>
                 </form>
               </TabsContent>
