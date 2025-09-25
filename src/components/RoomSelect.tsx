@@ -99,7 +99,7 @@ const getDifficultyColor = (difficulty: Room['difficulty']) => {
 
 export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
 
-  const { isConnected, rooms } = useGameServer();
+  const { isConnected, rooms, joinRoom } = useGameServer();
 
   const [mockRooms, setMockRooms] = useState<Room[] | []>([]);
   var roomData: Room[] = [];
@@ -132,8 +132,8 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
 
   const handleRoomSelect = (room: Room) => {
     // Call the original callback
+    joinRoom(Number(room.id));
     onRoomSelect(room);
-
   };
 
   return (

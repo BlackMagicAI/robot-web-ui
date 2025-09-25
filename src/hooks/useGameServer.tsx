@@ -20,6 +20,7 @@ interface GameServerContextType {
   sendCommand: (command: string, data?: any) => void;
   //loginGuest: () => void;
   rooms: SFSRoom[];
+  joinRoom: (id: number) => void;
 }
 
 interface Config {
@@ -117,6 +118,10 @@ const smartFox = new SFS2X.SmartFox(config);
     // Add login-related event listeners during the SmartFox instance setup
     sfs.addEventListener(SFS2X.SFSEvent.LOGIN, onLogin, this);
     sfs.addEventListener(SFS2X.SFSEvent.LOGIN_ERROR, onLoginError, this);
+
+    // Add room-related event listeners during the SmartFox instance setup
+    sfs.addEventListener(SFS2X.SFSEvent.ROOM_JOIN, onRoomJoin, this);
+    sfs.addEventListener(SFS2X.SFSEvent.ROOM_JOIN_ERROR, onRoomJoinError, this);
 
     // Connect to SFS2X
     sfs.connect();
@@ -283,9 +288,6 @@ const onLogin = (evt) =>
     // rooms = socket.roomManager.getRoomList();
     var rmList =  getRoomList();
     setRooms(rmList);
-    console.log(typeof(rmList));
-    console.log("Zone Room list: " + rmList);
-    console.log(sfs);
 }
  
 function onLoginError(evt)
@@ -311,6 +313,29 @@ function onLoginError(evt)
     }
   };
 
+  const joinRoom = (roomId: number) =>{
+    // After the successful login, send the join Room request
+    sfs.send(new SFS2X.JoinRoomRequest(roomId));
+  }
+
+  const onRoomJoin = (evt) =>
+  {
+      console.log("Room joined: " + evt.room.name);
+      console.log("Room info: ");
+      
+      console.log(evt.room);
+      //console.log(evt.room._userManager._usersByName);
+      const users: string[] = evt.room._userManager._usersByName;       
+      console.log(users);
+      
+      
+  }
+ 
+  const onRoomJoinError = (evt) =>
+  {
+      console.warn("Room join failed: " + evt.errorMessage);
+  }
+
   const value: GameServerContextType = {
     isConnected,
     isConnecting,
@@ -318,7 +343,8 @@ function onLoginError(evt)
     connect,
     disconnect,
     sendCommand,
-    rooms
+    rooms,
+    joinRoom
   };
 
   return (
