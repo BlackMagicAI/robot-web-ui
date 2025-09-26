@@ -1,7 +1,4 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-//import * as SFS2X from "sfs2x-api";
-//import { SmartFox } from 'sfs2x-api';
-//const SFS2X = require("sfs2x-api"); // https://www.npmjs.com/package/sfs2x-api
 import * as SFS2X from "sfs2x-api";
 import { SFSRoom } from 'sfs2x-api';
 
@@ -21,6 +18,7 @@ interface GameServerContextType {
   //loginGuest: () => void;
   rooms: SFSRoom[];
   joinRoom: (id: number) => void;
+  userList: SFS2X.SFSUser[];
 }
 
 interface Config {
@@ -29,9 +27,6 @@ interface Config {
   debug : boolean;
   useSSL : boolean;
 }
-            // Load libraries
-            // WebSocket = require("ws://localhost:8080"); // https://www.npmjs.com/package/ws
-            // const SFS2X = require("sfs2x-api"); // https://www.npmjs.com/package/sfs2x-api
             
 const GameServerContext = createContext<GameServerContextType | undefined>(undefined);
 
@@ -53,6 +48,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [sfs, setSfs] = useState<SFS2X.SmartFox | null>(null);
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
+  const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
 
    // Set connection parameters
    const config: Config = {
@@ -68,36 +64,12 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   console.log('useEffect#######');
   // Initialize SFS2X client
 const smartFox = new SFS2X.SmartFox(config);
-  //console.log(sfs);
   setSfs(smartFox);
   // return () => {
   //   disconnect();
   // };
 }, []);
   console.log("------------");
-  // useEffect(() => {
-  //   console.log("222222222222");
-  //   console.log(config);
- 
-
-  //   return () => {
-  //     // Clean up event listeners on unmount
-  //     if (smartFox) {
-  //       smartFox.removeEventListener(SFS2X.SFSEvent.CONNECTION, onConnection);
-  //       smartFox.removeEventListener(SFS2X.SFSEvent.LOGIN, onLogin);
-  //       smartFox.disconnect();
-  //     }
-  //   };
-  // }, []);
-
-  // useEffect(() => {
-  //   if (sfs) { // Check if myObject is not null before using it
-  //     console.log('myObject updated:', sfs);
-  //     // Perform actions with the updated myObject here
-      
-  //     //console.log(rooms);
-  //   }
-  // }, [sfs]); // Dependency array: runs when myObject changes
 
   const connect = async () => {
     console.log("+++++++++++");
@@ -123,63 +95,11 @@ const smartFox = new SFS2X.SmartFox(config);
     sfs.addEventListener(SFS2X.SFSEvent.ROOM_JOIN, onRoomJoin, this);
     sfs.addEventListener(SFS2X.SFSEvent.ROOM_JOIN_ERROR, onRoomJoinError, this);
 
+    sfs.addEventListener(SFS2X.SFSEvent.USER_COUNT_CHANGE, onUserCountChange, this);
+
     // Connect to SFS2X
     sfs.connect();
-
-    //setSfs(smartFox);
-    // try {
-
-      // Replace with your actual game server WebSocket URL
-      // const ws = new WebSocket('ws://localhost:8080');
-      
-      // ws.onopen = () => {
-      //   console.log('Connected to game server');
-      //   setIsConnected(true);
-      //   setIsConnecting(false);
-      //   setSocket(ws);
-      // };
-
-      // ws.onclose = () => {
-      //   console.log('Disconnected from game server');
-      //   setIsConnected(false);
-      //   setSocket(null);
-      // };
-
-      // ws.onerror = (error) => {
-      //   console.error('Game server connection error:', error);
-      //   setConnectionError('Failed to connect to game server');
-      //   setIsConnecting(false);
-      // };
-
-      // ws.onmessage = (event) => {
-      //   try {
-      //     const data = JSON.parse(event.data);
-      //     console.log('Received from game server:', data);
-      //     // Handle incoming messages here
-      //   } catch (error) {
-      //     console.error('Error parsing message from game server:', error);
-      //   }
-      // };
-
-     
-
-    
-
-    // } catch (error) {
-    //   console.error('Error connecting to game server:', error);
-    //   setConnectionError('Failed to establish connection');
-    //   setIsConnecting(false);
-    // }
   };
-
-  // useEffect(() => {
-  //   if (sfs) { // Check if myObject is not null before using it
-  //     console.log('myObject updated:', sfs);
-  //     // Perform actions with the updated myObject here
-      
-  //     //console.log(rooms);
-  //   }
-  // }, [sfs]); // Dependency array: runs when myObject changes
 
   // Connection event handler
 const onConnection = (event) =>
@@ -257,15 +177,30 @@ const getRoomList = (): SFSRoom[] => {
  
 }
 
+const getRoomUserList = (): SFS2X.SFSUser[] =>{
+  if (sfs) {
+    console.log("In socket");
+    var users = sfs.userManager.getUserList();
+    console.log(users);
+    return users;
+   }
+}
+
+/*
+ * Event handler for room user count change
+ */
+const onUserCountChange = (event) => {
+	//update userlist
+	var userList = getRoomUserList();
+  setUserList(userList);
+}
+
 // Connect then login as guest
 const loginGuest = () => {
   console.log("Login&&&&&&&&&&&& ");
   console.log(sfs);
   if (sfs) {
    var sent = sfs.send(new SFS2X.LoginRequest("", "", null, "RobotBuddy"));
-   console.log("Login " + sent);
-  //  var rooms = sfs.getRoomListFromGroup("default");
-  //  console.log(rooms);
   }
 };
 
@@ -284,8 +219,6 @@ function onLogoutBtn()
 const onLogin = (evt) =>
 {
     console.log("Login successful; username is " + evt.user.name);
-    //var rooms = getRoomList();
-    // rooms = socket.roomManager.getRoomList();
     var rmList =  getRoomList();
     setRooms(rmList);
 }
@@ -320,15 +253,7 @@ function onLoginError(evt)
 
   const onRoomJoin = (evt) =>
   {
-      console.log("Room joined: " + evt.room.name);
-      console.log("Room info: ");
-      
-      console.log(evt.room);
-      //console.log(evt.room._userManager._usersByName);
-      const users: string[] = evt.room._userManager._usersByName;       
-      console.log(users);
-      
-      
+      const users: string[] = evt.room._userManager._usersByName;
   }
  
   const onRoomJoinError = (evt) =>
@@ -344,7 +269,8 @@ function onLoginError(evt)
     disconnect,
     sendCommand,
     rooms,
-    joinRoom
+    joinRoom,
+    userList
   };
 
   return (

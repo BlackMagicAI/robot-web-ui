@@ -121,11 +121,11 @@ const Auth = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
+            <Tabs defaultValue="guest" className="w-full">
               <TabsList className="grid w-full grid-cols-3">
                 <TabsTrigger value="guest">Guest</TabsTrigger>
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>               
+                {/* <TabsTrigger value="signin">Sign In</TabsTrigger>
+                <TabsTrigger value="signup">Sign Up</TabsTrigger>                */}
               </TabsList>
 
               <TabsContent value="guest" className="space-y-4">
@@ -147,7 +147,7 @@ const Auth = () => {
                 </form>
               </TabsContent>
 
-              <TabsContent value="signin" className="space-y-4">
+              {/* <TabsContent value="signin" className="space-y-4">
                 <form onSubmit={handleSignIn} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signin-email">Email</Label>
@@ -217,7 +217,7 @@ const Auth = () => {
                     Sign Up
                   </Button>
                 </form>
-              </TabsContent>
+              </TabsContent> */}
             </Tabs>
           </CardContent>
         </Card>

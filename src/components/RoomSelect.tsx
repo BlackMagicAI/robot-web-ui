@@ -21,54 +21,6 @@ interface RoomSelectProps {
   selectedRoom?: Room;
 }
 
-//var mockRooms: Room[] = [
-  // {
-  //   id: 'room-1',
-  //   name: 'Training Ground Alpha',
-  //   description: 'Perfect for beginners to learn robot control basics',
-  //   playerCount: 3,
-  //   maxPlayers: 8,
-  //   difficulty: 'Easy',
-  //   type: 'Training'
-  // },
-  // {
-  //   id: 'room-2', 
-  //   name: 'Combat Arena Beta',
-  //   description: 'Intense PvP battles with advanced combat systems',
-  //   playerCount: 12,
-  //   maxPlayers: 16,
-  //   difficulty: 'Hard',
-  //   type: 'PvP'
-  // },
-  // {
-  //   id: 'room-3',
-  //   name: 'Exploration Zone Gamma',
-  //   description: 'Cooperative exploration of unknown territories',
-  //   playerCount: 6,
-  //   maxPlayers: 10,
-  //   difficulty: 'Medium',
-  //   type: 'Exploration'
-  // },
-  // {
-  //   id: 'room-4',
-  //   name: 'Defense Station Delta',
-  //   description: 'Team up to defend against AI-controlled enemies',
-  //   playerCount: 8,
-  //   maxPlayers: 12,
-  //   difficulty: 'Medium',
-  //   type: 'PvE'
-  // },
-  // {
-  //   id: 'room-5',
-  //   name: 'Elite Championship',
-  //   description: 'High-stakes tournament for experienced pilots',
-  //   playerCount: 15,
-  //   maxPlayers: 20,
-  //   difficulty: 'Hard',
-  //   type: 'PvP'
-  // }
-//];
-
 const getRoomIcon = (type: Room['type']) => {
   switch (type) {
     case 'PvP':
@@ -100,7 +52,6 @@ const getDifficultyColor = (difficulty: Room['difficulty']) => {
 export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
 
   const { isConnected, rooms, joinRoom } = useGameServer();
-
   const [mockRooms, setMockRooms] = useState<Room[] | []>([]);
   var roomData: Room[] = [];
 
@@ -119,13 +70,10 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
               difficulty: 'Easy',
               type: 'Exploration'
             }
-            roomData.push(obj);
-            console.log(obj);
-         
+            roomData.push(obj);            
         }
         setMockRooms(roomData);
-      }
-        
+      }        
     }
   }, [isConnected, rooms]); // Dependency array: runs when myObject changes
 

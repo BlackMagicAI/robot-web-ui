@@ -2,112 +2,25 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, Crown, Shield, Zap } from 'lucide-react';
+import { Users, Zap, Bot, PersonStanding } from 'lucide-react';
 import type { Room } from './RoomSelect';
+import { useGameServer } from '@/hooks/useGameServer';
+import { useEffect, useState } from 'react';
 
 interface Participant {
   id: string;
   username: string;
   avatar?: string;
   status: 'online' | 'away' | 'busy';
-  role: 'owner' | 'moderator' | 'member';
+  role: 'operator' | 'ai' | 'agent';
   level: number;
   isReady: boolean;
+  isItMe: boolean;
 }
 
 interface RoomParticipantsProps {
   room: Room;
 }
-
-const mockParticipants: Record<string, Participant[]> = {
-  'room-1': [
-    {
-      id: '1',
-      username: 'RobotMaster99',
-      avatar: undefined,
-      status: 'online',
-      role: 'owner',
-      level: 15,
-      isReady: true
-    },
-    {
-      id: '2', 
-      username: 'TechPilot_Alpha',
-      avatar: undefined,
-      status: 'online',
-      role: 'member',
-      level: 8,
-      isReady: true
-    },
-    {
-      id: '3',
-      username: 'NewbieExplorer',
-      avatar: undefined,
-      status: 'away',
-      role: 'member', 
-      level: 2,
-      isReady: false
-    }
-  ],
-  'room-2': [
-    {
-      id: '4',
-      username: 'BattleCommander',
-      avatar: undefined,
-      status: 'online',
-      role: 'owner',
-      level: 42,
-      isReady: true
-    },
-    {
-      id: '5',
-      username: 'WarMachine_X',
-      avatar: undefined,
-      status: 'online',
-      role: 'moderator',
-      level: 38,
-      isReady: true
-    },
-    {
-      id: '6',
-      username: 'EliteStriker',
-      avatar: undefined,
-      status: 'busy',
-      role: 'member',
-      level: 35,
-      isReady: false
-    },
-    {
-      id: '7',
-      username: 'CyberWarrior21',
-      avatar: undefined,
-      status: 'online',
-      role: 'member',
-      level: 29,
-      isReady: true
-    }
-  ],
-  'room-3': [
-    {
-      id: '8',
-      username: 'ExplorerLeader',
-      avatar: undefined,
-      status: 'online',
-      role: 'owner',
-      level: 28,
-      isReady: true
-    },
-    {
-      id: '9',
-      username: 'ScoutDrone_Beta',
-      avatar: undefined,
-      status: 'online',
-      role: 'member',
-      level: 22,
-      isReady: true
-    }
-  ]
-};
 
 const getStatusColor = (status: Participant['status']) => {
   switch (status) {
@@ -124,18 +37,41 @@ const getStatusColor = (status: Participant['status']) => {
 
 const getRoleIcon = (role: Participant['role']) => {
   switch (role) {
-    case 'owner':
-      return <Crown className="h-3 w-3 text-amber-500" />;
-    case 'moderator':
-      return <Shield className="h-3 w-3 text-blue-500" />;
+    case 'operator':
+      return <PersonStanding className="h-3 w-3 text-amber-500" />;
+    case 'ai':
+      return <Bot className="h-3 w-3 text-blue-500" />;
     default:
       return null;
   }
 };
 
 export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
-  const participants = mockParticipants[room.id] || [];
   
+  const [participants, setParticipants] = useState<Participant[] | []>([]);
+  const { isConnected, userList } = useGameServer();
+  
+  useEffect(() => {
+    if (isConnected) { // Check if myObject is not null before using it
+      var roomParticipants: Participant[] = [];
+      for(var u in userList){        
+        const obj: Participant = {
+          id: userList[u].id.toString(),
+          username: userList[u].name,
+          avatar: undefined,
+          status: 'online',
+          role: 'operator',
+          level: 15,
+          isReady: true,
+          isItMe: userList[u].isItMe
+        }
+        roomParticipants.push(obj);
+      }
+      setParticipants(roomParticipants);      
+    }
+    }, [userList]); // Dependency array: runs when myObject changes
+
+
   return (
     <Card className="h-fit-content">
       <CardHeader>
