@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
@@ -17,6 +18,7 @@ const Auth = () => {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [guestUsername, setGuestUsername] = useState('');
+  const [guestRole, setGuestRole] = useState('operator');
   const { signIn, signUp, signInAsGuest, user, isGuest } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -139,6 +141,19 @@ const Auth = () => {
                       onChange={(e) => setGuestUsername(e.target.value)}
                       placeholder="Enter a username"
                     />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="guest-role">Role</Label>
+                    <Select value={guestRole} onValueChange={setGuestRole}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a role" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="operator">Operator</SelectItem>
+                        <SelectItem value="ai">AI</SelectItem>
+                        <SelectItem value="robot">Robot</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
