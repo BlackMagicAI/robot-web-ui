@@ -19,6 +19,8 @@ interface GameServerContextType {
   rooms: SFSRoom[];
   joinRoom: (id: number) => void;
   userList: SFS2X.SFSUser[];
+  connectToTargetParticipant: (id: number, name: string) => void;
+  sendBuddyCommand: (command: string, data?: any) => void;
 }
 
 interface Config {
@@ -49,6 +51,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [sfs, setSfs] = useState<SFS2X.SmartFox | null>(null);
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
+  const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
 
    // Set connection parameters
    const config: Config = {
@@ -97,8 +100,16 @@ const smartFox = new SFS2X.SmartFox(config);
 
     sfs.addEventListener(SFS2X.SFSEvent.USER_COUNT_CHANGE, onUserCountChange, this);
 
+    sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_MESSAGE, onBuddyMessage, this);
+
+    // Add buddy-related event listeners during the SmartFox instance setup
+    sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_ADD, onBuddyAdded, this);
+    sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_ERROR, onBuddyError, this);
+    sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_LIST_INIT, onBuddyListInitialized, this);
+
     // Connect to SFS2X
     sfs.connect();
+
   };
 
   // Connection event handler
@@ -106,13 +117,14 @@ const onConnection = (event) =>
 {
     if (event.success)
     {
-        console.log("Connected to SmartFoxServer 2X!");
-        console.log("SFS2X API version: " + sfs);
-        
-        setIsConnected(true);
-        setIsConnecting(false);
-        // login
-        loginGuest();
+      console.log("Connected to SmartFoxServer 2X!");
+      console.log("SFS2X API version: " + sfs.version);
+      
+      setIsConnected(true);
+      setIsConnecting(false);
+      
+      // login
+      loginGuest();      
     }
     else
     { 
@@ -195,6 +207,17 @@ const onUserCountChange = (event) => {
   setUserList(userList);
 }
 
+const onBuddyAdded = (evt) =>
+{
+    console.log("Buddy added: " + evt.buddy.name);
+}
+ 
+const onBuddyError = (evt) =>
+{
+    console.warn("BuddyList error: " + evt.errorMessage);
+}
+
+
 // Connect then login as guest
 const loginGuest = () => {
   console.log("Login&&&&&&&&&&&& ");
@@ -220,7 +243,7 @@ const onLogin = (evt) =>
 {
     console.log("Login successful; username is " + evt.user.name);
     var rmList =  getRoomList();
-    setRooms(rmList);
+    setRooms(rmList);       
 }
  
 function onLoginError(evt)
@@ -246,6 +269,57 @@ function onLoginError(evt)
     }
   };
 
+  const connectToTargetParticipant = (id: number, name: string) => {
+    console.log(id);
+    setCurrentPrivateChat(id);
+    sfs.send(new SFS2X.AddBuddyRequest(name));
+    //sfs.send(new SFS2X.InitBuddyListRequest());
+  }
+
+/*
+ * Send command messages to currently selected robot buddy
+ */
+const sendBuddyCommand = (cmd, value) => {
+	var params = new SFS2X.SFSObject();
+	params.putUtfString("cmd", cmd);
+	params.putInt("targetid", currentPrivateChat);
+	params.putInt("value", value);	
+	console.log("Sending command");
+	if(sfs){
+		// Get the recipient of the message, in this case my buddy
+		var buddy = sfs.buddyManager.getBuddyById(Number(currentPrivateChat));
+    console.log(currentPrivateChat);
+    console.log(buddy);
+		//console.log(sfs.buddyManager);
+		//console.log("sendBuddyMessage1:" + currentPrivateChat);
+		//console.log(currentUser.name);
+		if (typeof(buddy) !== "undefined"){//only send if connected to server
+			var isSent = sfs.send(new SFS2X.BuddyMessageRequest("buddycmd", buddy, params));
+		}
+	}
+	//console.log("sendBuddyCommand");	
+}
+
+/*
+ * Buddy message event handler
+ */
+const onBuddyMessage = (event) =>{
+
+	   var isItMe = event.isItMe;
+	    var sender = event.buddy;
+	    var message = event.message;
+      var customParams = event.data; // SFSObject
+	   console.log("Buddy Msg recieved:");
+     console.log(isItMe);
+     console.log(sender);
+     console.log(message);    
+     console.log(event);
+     //
+     console.log(customParams.getUtfString("cmd"));
+     console.log(customParams.getInt("targetid"));
+     console.log(customParams.getInt("value"));	
+}
+
   const joinRoom = (roomId: number) =>{
     // After the successful login, send the join Room request
     sfs.send(new SFS2X.JoinRoomRequest(roomId));
@@ -254,11 +328,19 @@ function onLoginError(evt)
   const onRoomJoin = (evt) =>
   {
       const users: string[] = evt.room._userManager._usersByName;
+      //
+      sfs.send(new SFS2X.InitBuddyListRequest());
   }
  
   const onRoomJoinError = (evt) =>
   {
       console.warn("Room join failed: " + evt.errorMessage);
+  }
+
+  const onBuddyListInitialized = (...params: any[]) => {
+    // Retrieve my buddies list
+	  var buddies = sfs.buddyManager.getBuddyList();
+    console.log("onBuddyListInitialized - Function not implemented.");
   }
 
   const value: GameServerContextType = {
@@ -270,7 +352,9 @@ function onLoginError(evt)
     sendCommand,
     rooms,
     joinRoom,
-    userList
+    userList,
+    connectToTargetParticipant,
+    sendBuddyCommand
   };
 
   return (

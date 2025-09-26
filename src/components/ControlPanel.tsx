@@ -15,6 +15,7 @@ import {
   Shield,
   Gauge
 } from 'lucide-react';
+import { useGameServer } from '@/hooks/useGameServer';
 
 export const ControlPanel = () => {
   const [speed, setSpeed] = useState([50]);
@@ -23,6 +24,21 @@ export const ControlPanel = () => {
   const [isAutonomous, setIsAutonomous] = useState(false);
   const [isArmed, setIsArmed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
+
+  const { isConnected, userList, sendBuddyCommand} = useGameServer();
+
+  const handleSwitch1 = (value) =>{
+    setIsAutonomous(value);
+    console.log("Autonmous Mode");
+    console.log(value);
+    if(value){			 
+      console.log("switch1-on");
+      sendBuddyCommand("switch1", 1);
+    }else if(value === false){
+      console.log("switch1-off");
+      sendBuddyCommand("switch1", 0);
+    }
+  }
 
   return (
     <Card className="p-4 h-fit-content">
@@ -84,7 +100,7 @@ export const ControlPanel = () => {
             </div>
             <Switch 
               checked={isAutonomous} 
-              onCheckedChange={setIsAutonomous}
+              onCheckedChange={handleSwitch1}
             />
           </div>
           

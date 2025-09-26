@@ -49,7 +49,7 @@ const getRoleIcon = (role: Participant['role']) => {
 export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
   
   const [participants, setParticipants] = useState<Participant[] | []>([]);
-  const { isConnected, userList } = useGameServer();
+  const { isConnected, userList, connectToTargetParticipant } = useGameServer();
   
   useEffect(() => {
     if (isConnected) { // Check if myObject is not null before using it
@@ -65,12 +65,20 @@ export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
           isReady: true,
           isItMe: userList[u].isItMe
         }
-        roomParticipants.push(obj);
+        if(!obj.isItMe){
+          roomParticipants.push(obj);
+        }        
       }
       setParticipants(roomParticipants);      
     }
     }, [userList]); // Dependency array: runs when myObject changes
 
+
+  const handleParticipantSelect = (participant: Participant): void => {
+    console.log("Participant selected:" );
+    console.log(participant);
+    connectToTargetParticipant(Number(participant.id), participant.username);
+  }
 
   return (
     <Card className="h-fit-content">
@@ -93,6 +101,7 @@ export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
               <div
                 key={participant.id}
                 className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors"
+                onClick={() => handleParticipantSelect(participant)}
               >
                 <div className="relative">
                   <Avatar className="h-10 w-10">
