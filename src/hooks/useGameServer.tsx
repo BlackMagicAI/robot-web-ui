@@ -9,8 +9,9 @@ interface Room {
 }
 
 interface GameServerContextType {
-  isConnected: boolean;
-  isConnecting: boolean;
+  isGameServerConnected: boolean;
+  isGameServerConnecting: boolean;
+  isBuddyConnected: boolean;
   connectionError: string | null;
   connect: () => Promise<void>;
   disconnect: () => void;
@@ -45,8 +46,9 @@ interface GameServerProviderProps {
 }
 
 export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children }) => {
-  const [isConnected, setIsConnected] = useState(false);
-  const [isConnecting, setIsConnecting] = useState(false);
+  const [isGameServerConnected, setIsGameServerConnected] = useState(false);
+  const [isGameServerConnecting, setIsGameServerConnecting] = useState(false);
+  const [isBuddyConnected, setIsBuddyConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [sfs, setSfs] = useState<SFS2X.SmartFox | null>(null);
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
@@ -75,11 +77,12 @@ const smartFox = new SFS2X.SmartFox(config);
   console.log("------------");
 
   const connect = async () => {
-    console.log("+++++++++++");
-    if (isConnecting || isConnected) return;
+    // console.log("+++++++++++:" + userRole);
+    // console.log("+++++++++++:" + guestName);
+    if (isGameServerConnecting || isGameServerConnected) return;
 
-    setIsConnected(false);
-    setIsConnecting(true);
+    setIsGameServerConnected(false);
+    setIsGameServerConnecting(true);
     setConnectionError(null);
 
 
@@ -104,6 +107,7 @@ const smartFox = new SFS2X.SmartFox(config);
 
     // Add buddy-related event listeners during the SmartFox instance setup
     sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_ADD, onBuddyAdded, this);
+    sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_REMOVE, onBuddyRemoved, this);
     sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_ERROR, onBuddyError, this);
     sfs.addEventListener(SFS2X.SFSBuddyEvent.BUDDY_LIST_INIT, onBuddyListInitialized, this);
 
@@ -120,8 +124,8 @@ const onConnection = (event) =>
       console.log("Connected to SmartFoxServer 2X!");
       console.log("SFS2X API version: " + sfs.version);
       
-      setIsConnected(true);
-      setIsConnecting(false);
+      setIsGameServerConnected(true);
+      setIsGameServerConnecting(false);
       
       // login
       loginGuest();      
@@ -129,7 +133,7 @@ const onConnection = (event) =>
     else
     { 
       setConnectionError('Failed to connect to game server');
-      setIsConnecting(false);
+      setIsGameServerConnecting(false);
       console.warn("Connection failed: " + (event.errorMessage ? event.errorMessage + " (" + event.errorCode + ")" : "Is the server running at all?"));
     }
        
@@ -142,7 +146,7 @@ function onConnectionLost(event)
     sfs.disconnect;
     setSfs(null);    
   }
-  setIsConnected(false);
+  //setIsConnected(false);
   console.warn("Disconnection occurred; reason is: " + event.reason);
 }
 
@@ -210,8 +214,15 @@ const onUserCountChange = (event) => {
 const onBuddyAdded = (evt) =>
 {
     console.log("Buddy added: " + evt.buddy.name);
+    setIsBuddyConnected(true);
 }
  
+const onBuddyRemoved = (evt) =>
+{
+    console.log("Buddy removed: " + evt.buddy.name);
+    setIsBuddyConnected(false);
+}
+
 const onBuddyError = (evt) =>
 {
     console.warn("BuddyList error: " + evt.errorMessage);
@@ -255,12 +266,12 @@ function onLoginError(evt)
     if (sfs) {
       sfs.disconnect;
       setSfs(null);
-      setIsConnected(false);
+      setIsGameServerConnected(false);
     }
   };
 
   const sendCommand = (command: string, data?: any) => {
-    if (sfs && isConnected) {
+    if (sfs && isGameServerConnected) {
       const message = JSON.stringify({ command, data });
       sfs.send(message);
       console.log('Sent to game server:', { command, data });
@@ -306,7 +317,7 @@ const sendBuddyCommand = (cmd, value) => {
 const onBuddyMessage = (event) =>{
 
 	   var isItMe = event.isItMe;
-	    var sender = event.buddy;
+      var sender = event.buddy;
 	    var message = event.message;
       var customParams = event.data; // SFSObject
 	   console.log("Buddy Msg recieved:");
@@ -344,8 +355,9 @@ const onBuddyMessage = (event) =>{
   }
 
   const value: GameServerContextType = {
-    isConnected,
-    isConnecting,
+    isGameServerConnected,
+    isGameServerConnecting,
+    isBuddyConnected,
     connectionError,
     connect,
     disconnect,

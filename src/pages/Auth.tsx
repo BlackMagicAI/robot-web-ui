@@ -22,7 +22,7 @@ const Auth = () => {
   const { signIn, signUp, signInAsGuest, user, isGuest } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { isConnected, connect } = useGameServer();
+  const { connect } = useGameServer();
 
   // Redirect if already authenticated
   useEffect(() => {

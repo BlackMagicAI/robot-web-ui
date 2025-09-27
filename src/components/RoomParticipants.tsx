@@ -49,10 +49,10 @@ const getRoleIcon = (role: Participant['role']) => {
 export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
   
   const [participants, setParticipants] = useState<Participant[] | []>([]);
-  const { isConnected, userList, connectToTargetParticipant } = useGameServer();
+  const { isGameServerConnected, userList, connectToTargetParticipant } = useGameServer();
   
   useEffect(() => {
-    if (isConnected) { // Check if myObject is not null before using it
+    if (isGameServerConnected) { // Check if myObject is not null before using it
       var roomParticipants: Participant[] = [];
       for(var u in userList){        
         const obj: Participant = {

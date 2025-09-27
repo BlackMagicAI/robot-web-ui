@@ -51,12 +51,12 @@ const getDifficultyColor = (difficulty: Room['difficulty']) => {
 
 export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
 
-  const { isConnected, rooms, joinRoom } = useGameServer();
+  const { isGameServerConnected, rooms, joinRoom } = useGameServer();
   const [mockRooms, setMockRooms] = useState<Room[] | []>([]);
   var roomData: Room[] = [];
 
   useEffect(() => {
-    if (isConnected) { // Check if myObject is not null before using it
+    if (isGameServerConnected) { // Check if myObject is not null before using it
       console.log('Room connect%%%%%%');
       // Perform actions with the updated myObject here      
       if(Array.isArray(rooms) && rooms.length > 0){
@@ -75,7 +75,7 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
         setMockRooms(roomData);
       }        
     }
-  }, [isConnected, rooms]); // Dependency array: runs when myObject changes
+  }, [isGameServerConnected, rooms]); // Dependency array: runs when myObject changes
 
 
   const handleRoomSelect = (room: Room) => {

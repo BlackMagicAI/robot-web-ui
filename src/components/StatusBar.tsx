@@ -17,7 +17,7 @@ interface StatusBarProps {
 }
 
 export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
-  const { isConnected: gameServerConnected, isConnecting } = useGameServer();
+  const { isGameServerConnected, isGameServerConnecting, isBuddyConnected } = useGameServer();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [battery] = useState(65);
   const [signal] = useState(85);
@@ -50,30 +50,30 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
         <div className="flex items-center gap-4">
           {/* Robot Connection Status */}
           <div className="flex items-center gap-2">
-            {isConnected ? (
+            {isBuddyConnected ? (
               <Wifi className="w-4 h-4 text-success" />
             ) : (
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
-            <Badge variant={isConnected ? "default" : "destructive"} className="text-xs">
-              ROBOT: {isConnected ? "CONNECTED" : "DISCONNECTED"}
+            <Badge variant={isBuddyConnected ? "default" : "destructive"} className="text-xs">
+              ROBOT: {isBuddyConnected ? "CONNECTED" : "DISCONNECTED"}
             </Badge>
           </div>
 
           {/* Game Server Connection Status */}
           <div className="flex items-center gap-2">
-            {gameServerConnected ? (
+            {isGameServerConnected ? (
               <Wifi className="w-4 h-4 text-success" />
-            ) : isConnecting ? (
+            ) : isGameServerConnecting ? (
               <Wifi className="w-4 h-4 text-warning animate-pulse" />
             ) : (
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
             <Badge 
-              variant={gameServerConnected ? "default" : isConnecting ? "secondary" : "destructive"} 
+              variant={isGameServerConnected ? "default" : isGameServerConnecting ? "secondary" : "destructive"} 
               className="text-xs"
             >
-              SERVER: {gameServerConnected ? "CONNECTED" : isConnecting ? "CONNECTING..." : "DISCONNECTED"}
+              SERVER: {isGameServerConnected ? "CONNECTED" : isGameServerConnecting ? "CONNECTING..." : "DISCONNECTED"}
             </Badge>
           </div>
 
