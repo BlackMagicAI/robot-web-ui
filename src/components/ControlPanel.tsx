@@ -13,9 +13,11 @@ import {
   Zap,
   Settings,
   Shield,
-  Gauge
+  Gauge,
+  Bluetooth
 } from 'lucide-react';
 import { useGameServer } from '@/hooks/useGameServer';
+import { useWebBluetooth } from '@/hooks/useWebBluetooth';
 
 export const ControlPanel = () => {
   const [speed, setSpeed] = useState([50]);
@@ -26,6 +28,14 @@ export const ControlPanel = () => {
   const [isRunning, setIsRunning] = useState(false);
 
   const { isGameServerConnected, userList, sendBuddyCommand} = useGameServer();
+  const { isConnected: isBleConnected, scanForDevices, connectToDevice } = useWebBluetooth();
+
+  const handleBleConnect = async () => {
+    const device = await scanForDevices();
+    if (device) {
+      await connectToDevice(device);
+    }
+  };
 
   const handleSwitch1 = (value) =>{
     setIsAutonomous(value);
@@ -60,6 +70,19 @@ export const ControlPanel = () => {
           >
             <Square className="w-4 h-4 mr-2" />
             EMERGENCY STOP
+          </Button>
+        </div>
+
+        {/* Connectivity */}
+        <div className="space-y-3">
+          <h4 className="text-sm font-medium text-muted-foreground">Connectivity</h4>
+          <Button 
+            variant={isBleConnected ? "secondary" : "outline"}
+            className="w-full"
+            onClick={handleBleConnect}
+          >
+            <Bluetooth className="w-4 h-4 mr-2" />
+            {isBleConnected ? "BLE Connected" : "BLE Connect"}
           </Button>
         </div>
 
