@@ -25,7 +25,7 @@ export const ControlPanel = () => {
   const [isArmed, setIsArmed] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
 
-  const { isConnected, userList, sendBuddyCommand} = useGameServer();
+  const { isGameServerConnected, userList, sendBuddyCommand} = useGameServer();
 
   const handleSwitch1 = (value) =>{
     setIsAutonomous(value);
