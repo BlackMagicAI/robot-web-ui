@@ -78,8 +78,34 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
 
     try {
       setConnectionError(null);
-      const server = await device.gatt.connect();
-      setGattServer(server);
+      //const server = await device.gatt.connect();
+
+      device.gatt.connect()
+      .then(server => {
+        console.log(2)
+        setGattServer(server);
+        return server.getPrimaryServices();
+      })
+      .then(services => {
+        console.log(3)
+        console.log(services);
+        //return service.getCharacteristic('battery_level');
+        return services[0].getCharacteristics();
+      })
+       .then(characteristics => {
+        console.log(4)
+        console.log(characteristics);
+        return characteristics[0].readValue()
+      })
+      .then(value => {
+        console.log(5)
+        console.log(value.getUint8(0))
+      })
+      .catch(error => { 
+         console.log('error: ', error) 
+      })
+
+      // setGattServer(server);
       setConnectedDevice(device);
       setIsConnected(true);
 

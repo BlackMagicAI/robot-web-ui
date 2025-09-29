@@ -28,26 +28,39 @@ export const ControlPanel = () => {
   const [isRunning, setIsRunning] = useState(false);
 
   const { isGameServerConnected, userList, sendBuddyCommand} = useGameServer();
-  const { isConnected: isBleConnected, scanForDevices, connectToDevice } = useWebBluetooth();
+  const { isConnected: isBleConnected, scanForDevices, connectToDevice, readCharacteristic } = useWebBluetooth();
 
   const handleBleConnect = async () => {
-    const device = await scanForDevices();
+    let options = {
+      filters: [
+        { services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"] }
+      ]
+    };
+    const device = await scanForDevices(options);
     if (device) {
+      console.log(device);
       await connectToDevice(device);
     }
+    
   };
-
+ 
   const handleSwitch1 = (value) =>{
-    setIsAutonomous(value);
-    console.log("Autonmous Mode");
-    console.log(value);
-    if(value){			 
-      console.log("switch1-on");
-      sendBuddyCommand("switch1", 1);
-    }else if(value === false){
-      console.log("switch1-off");
-      sendBuddyCommand("switch1", 0);
-    }
+    // setIsAutonomous(value);
+    // console.log("Autonmous Mode");
+    // console.log(value);
+    // if(value){			 
+    //   console.log("switch1-on");
+    //   sendBuddyCommand("switch1", 1);
+    // }else if(value === false){
+    //   console.log("switch1-off");
+    //   sendBuddyCommand("switch1", 0);
+    // }
+    readCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8")
+    .then(value => {
+      if(value){
+        console.log(`Characteristic value is ${value.getUint8(0)}`);
+      }      
+    })
   }
 
   return (
