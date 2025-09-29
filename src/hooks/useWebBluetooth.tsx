@@ -92,15 +92,15 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
         //return service.getCharacteristic('battery_level');
         return services[0].getCharacteristics();
       })
-       .then(characteristics => {
-        console.log(4)
-        console.log(characteristics);
-        return characteristics[0].readValue()
-      })
-      .then(value => {
-        console.log(5)
-        console.log(value.getUint8(0))
-      })
+      //  .then(characteristics => {
+      //   console.log(4)
+      //   console.log(characteristics);
+      //   return characteristics[0].readValue()
+      // })
+      // .then(value => {
+      //   console.log(5)
+      //   //console.log(value.getUint8(0))
+      // })
       .catch(error => { 
          console.log('error: ', error) 
       })
@@ -169,8 +169,10 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   ): Promise<boolean> => {
     const characteristic = await getCharacteristic(serviceUuid, characteristicUuid);
     if (!characteristic) return false;
-
+console.log(characteristic);
     try {
+      //const data = new Uint8Array([1]);
+      //await characteristic.writeValue(data);
       await characteristic.writeValue(value);
       return true;
     } catch (error) {
