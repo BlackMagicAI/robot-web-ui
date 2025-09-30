@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import * as SFS2X from "sfs2x-api";
 import { SFSRoom } from 'sfs2x-api';
+import { useWebBluetooth } from './useWebBluetooth';
 
 interface Room {
   Room: string;
@@ -54,6 +55,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
   const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
+  const { writeCharacteristic } = useWebBluetooth();
 
    // Set connection parameters
    const config: Config = {
@@ -326,9 +328,24 @@ const onBuddyMessage = (event) =>{
      console.log(message);    
      console.log(event);
      //
-     console.log(customParams.getUtfString("cmd"));
-     console.log(customParams.getInt("targetid"));
-     console.log(customParams.getInt("value"));	
+     const cmd = customParams.getUtfString("cmd");
+     const targetId = customParams.getInt("targetid");
+     const value = customParams.getInt("value");
+     console.log(cmd);
+     console.log(targetId);
+     console.log(value);
+
+     // Write value to bluetooth characteristic
+     const data = new Uint8Array([value]);
+     writeCharacteristic(
+       "4fafc201-1fb5-459e-8fcc-c5c9c331914b", 
+       "beb5483e-36e1-4688-b7f5-ea07361b26a8", 
+       data
+     ).then(() => {
+       console.log("Value written to bluetooth characteristic:", value);
+     }).catch(error => {
+       console.error("Error writing to bluetooth characteristic:", error);
+     });
 }
 
   const joinRoom = (roomId: number) =>{
