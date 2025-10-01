@@ -8,9 +8,18 @@ import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
 import { AuthProvider } from "./hooks/useAuth";
 import { GameServerProvider } from "./hooks/useGameServer";
-import { WebBluetoothProvider } from "./hooks/useWebBluetooth";
+import { WebBluetoothProvider, useWebBluetooth } from "./hooks/useWebBluetooth";
 
 const queryClient = new QueryClient();
+
+const GameServerWithBluetooth = ({ children }: { children: React.ReactNode }) => {
+  const webBluetooth = useWebBluetooth();
+  return (
+    <GameServerProvider webBluetooth={webBluetooth}>
+      {children}
+    </GameServerProvider>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -19,16 +28,16 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <GameServerProvider>
-            <WebBluetoothProvider>
+          <WebBluetoothProvider>
+            <GameServerWithBluetooth>
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/auth" element={<Auth />} />
                 {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
                 <Route path="*" element={<NotFound />} />
               </Routes>
-            </WebBluetoothProvider>
-          </GameServerProvider>
+            </GameServerWithBluetooth>
+          </WebBluetoothProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

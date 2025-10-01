@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
-interface WebBluetoothContextType {
+export interface WebBluetoothContextType {
   isConnected: boolean;
   isScanning: boolean;
   connectedDevice: BluetoothDevice | null;

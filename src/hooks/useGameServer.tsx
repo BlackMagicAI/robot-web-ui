@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import * as SFS2X from "sfs2x-api";
 import { SFSRoom } from 'sfs2x-api';
-import { useWebBluetooth } from './useWebBluetooth';
+import { WebBluetoothContextType } from './useWebBluetooth';
 
 interface Room {
   Room: string;
@@ -44,9 +44,10 @@ export const useGameServer = () => {
 
 interface GameServerProviderProps {
   children: ReactNode;
+  webBluetooth: WebBluetoothContextType;
 }
 
-export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children }) => {
+export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children, webBluetooth }) => {
   const [isGameServerConnected, setIsGameServerConnected] = useState(false);
   const [isGameServerConnecting, setIsGameServerConnecting] = useState(false);
   const [isBuddyConnected, setIsBuddyConnected] = useState(false);
@@ -55,7 +56,6 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
   const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
-  const { writeCharacteristic } = useWebBluetooth();
 
    // Set connection parameters
    const config: Config = {
@@ -337,7 +337,7 @@ const onBuddyMessage = (event) =>{
 
      // Write value to bluetooth characteristic
      const data = new Uint8Array([value]);
-     writeCharacteristic(
+     webBluetooth.writeCharacteristic(
        "4fafc201-1fb5-459e-8fcc-c5c9c331914b", 
        "beb5483e-36e1-4688-b7f5-ea07361b26a8", 
        data
