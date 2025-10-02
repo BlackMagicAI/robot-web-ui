@@ -27,11 +27,11 @@ interface GameServerContextType {
 
 interface Config {
   host: string;
-  port : number;
-  debug : boolean;
-  useSSL : boolean;
+  port: number;
+  debug: boolean;
+  useSSL: boolean;
 }
-            
+
 const GameServerContext = createContext<GameServerContextType | undefined>(undefined);
 
 export const useGameServer = () => {
@@ -47,10 +47,6 @@ interface GameServerProviderProps {
   webBluetooth: WebBluetoothContextType;
 }
 
-// interface GameServerProviderProps {
-//   children: ReactNode;
-// }
-
 export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children, webBluetooth }) => {
   const [isGameServerConnected, setIsGameServerConnected] = useState(false);
   const [isGameServerConnecting, setIsGameServerConnecting] = useState(false);
@@ -60,76 +56,40 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
   const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
-  // const [characteristic, setCharacteristic] = useState<BluetoothRemoteGATTCharacteristic | null>(null);
   const [messageValue, setMessageValue] = useState<Uint8Array>();
-   // Set connection parameters
-   const config: Config = {
-    host : "127.0.0.1",
-    port : 8080,
-    debug : true,
-    useSSL : false
+
+  // Set connection parameters
+  const config: Config = {
+    host: "127.0.0.1",
+    port: 8080,
+    debug: true,
+    useSSL: false
   };
 
- // Auto-connect on initialization
- useEffect(() => {
-  //connect();
-  console.log('useEffect#######');
-  console.log(webBluetooth.isConnected);
-  // if(webBluetooth.isConnected){
-  //     const data = new Uint8Array([1]);
-  //     webBluetooth.writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
-  //       .then(() => {
-  //         console.log("Value written to LEDcharacteristic:", data);
-  //       })
-  //       .catch(error => {
-  //         console.error("Error writing to the LED characteristic: ", error);
-  //       });
-  // }
-  // Initialize SFS2X client
-  if(!sfs){
-    const smartFox = new SFS2X.SmartFox(config);
-    setSfs(smartFox);
-  }
+  // Auto-connect on login
+  useEffect(() => {
+    // Initialize SFS2X client
+    if (!sfs) {
+      const smartFox = new SFS2X.SmartFox(config);
+      setSfs(smartFox);
+    }
   }, [sfs]);
 
   useEffect(() => {
-    //connect();
-    console.log('webBluetooth-useEffect^^^^');
-    console.log(webBluetooth.isConnected);
-    if(webBluetooth.isConnected){
-        //const data = new Uint8Array([1]);
-        webBluetooth.writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", messageValue)
-          .then(() => {
-            console.log("Value written to LEDcharacteristic:", messageValue);
-          })
-          .catch(error => {
-            console.error("Error writing to the LED characteristic: ", messageValue);
-          });
+
+    if (webBluetooth.isConnected) {
+      webBluetooth.writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", messageValue)
+        .then(() => {
+          console.log("Value written to LEDcharacteristic:", messageValue);
+        })
+        .catch(error => {
+          console.error("Error writing to the LED characteristic: ", messageValue);
+        });
     }
-    
-  // return () => {
-  //   disconnect();
-  // };
-}, [messageValue]);
+  }, [messageValue]);
 
-  console.log("Start GameServerProvider------------");
+  console.log("Start GameServerProvider");
 
-  const initX = async () => {
-    let options = {
-      filters: [
-        { services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"] }
-      ]
-    };
-    const device = await webBluetooth.scanForDevices(options);
-    if (device) {
-      console.log(device);
-      await webBluetooth.connectToDevice(device);
-    }
-  
-  }
-
-  //initX();
-  
   const connect = async () => {
     // console.log("+++++++++++:" + userRole);
     // console.log("+++++++++++:" + guestName);
@@ -171,150 +131,101 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   };
 
   // Connection event handler
-const onConnection = (event) =>
-{
-    if (event.success)
-    {
+  const onConnection = (event) => {
+    if (event.success) {
       console.log("Connected to SmartFoxServer 2X!");
       console.log("SFS2X API version: " + sfs.version);
-      
+
       setIsGameServerConnected(true);
       setIsGameServerConnecting(false);
-      
+
       // login
-      loginGuest();      
+      loginGuest();
     }
-    else
-    { 
+    else {
       setConnectionError('Failed to connect to game server');
       setIsGameServerConnecting(false);
       console.warn("Connection failed: " + (event.errorMessage ? event.errorMessage + " (" + event.errorCode + ")" : "Is the server running at all?"));
     }
-       
-}
- 
-// Disconnection event handler
-function onConnectionLost(event)
-{
-  if (sfs) {
-    sfs.disconnect;
-    setSfs(null);    
+
   }
-  //setIsConnected(false);
-  console.warn("Disconnection occurred; reason is: " + event.reason);
-}
 
+  // Disconnection event handler
+  function onConnectionLost(event) {
+    if (sfs) {
+      sfs.disconnect;
+      setSfs(null);
+    }
+    //setIsConnected(false);
+    console.warn("Disconnection occurred; reason is: " + event.reason);
+  }
 
-//function login(){		
-	//console.log("login:" + state);
-	//var isSent;
+  const getRoomList = (): SFSRoom[] => {
+    if (sfs) {
+      var rooms = sfs.roomManager.getRoomList();
+      return rooms;
+    }
 
-  // After the successful connection, send the login request
-  //return socket.send(new SFS2X.LoginRequest("", "", null, "BasicExamples"));
-	// if(state === AppStates.LOGIN_STATE){//account login		
-	// 	//get form data
-	// 	var form = $("#login-form")[0];
-	// 	var formData = new FormData(form);
-	// 	var username = formData.get("username");
-	// 	var password = formData.get("password");
-	// 	isSent = sfs.send(new SFS2X.LoginRequest(username, password));		
+  }
 
-	// }else if (state === AppStates.LOGIN_GUEST_STATE){//anonymous guest login
-	// 	isSent = sfs.send(new SFS2X.LoginRequest());
-	// }else if (state ===  AppStates.LOGIN_SIGN_UP_STATE){
-	// 	CURRENT_STATE = AppStates.LOGIN_GUEST_SIGN_UP_STATE;
-	// 	isSent = sfs.send(new SFS2X.LoginRequest());//anonymous guest login		
-	// 	//register();
-	// }else if (state ===  AppStates.SUBMIT_SIGN_UP_STATE){
-	// 	CURRENT_STATE = "";	
-	// 	register();
-	// }
-	// Disable interface
-	// if(isSent)
-	// {
-	// 	//enableLoginBtn(false);
-	// }
-	//console.log("login:" + username + "," + password);
-//}
+  const getRoomUserList = (): SFS2X.SFSUser[] => {
+    if (sfs) {
+      var users = sfs.userManager.getUserList();
+      return users;
+    }
+  }
 
-const getRoomList = (): SFSRoom[] => {
-  if (sfs) {
-    console.log("In socket");
-    var rooms = sfs.roomManager.getRoomList();
-    console.log(rooms);
-    return rooms;
-   }
- 
-}
+  /*
+   * Event handler for room user count change
+   */
+  const onUserCountChange = (event) => {
+    //update userlist
+    var userList = getRoomUserList();
+    setUserList(userList);
+  }
 
-const getRoomUserList = (): SFS2X.SFSUser[] =>{
-  if (sfs) {
-    console.log("In socket");
-    var users = sfs.userManager.getUserList();
-    console.log(users);
-    return users;
-   }
-}
-
-/*
- * Event handler for room user count change
- */
-const onUserCountChange = (event) => {
-	//update userlist
-	var userList = getRoomUserList();
-  setUserList(userList);
-}
-
-const onBuddyAdded = (evt) =>
-{
+  const onBuddyAdded = (evt) => {
     console.log("Buddy added: " + evt.buddy.name);
     setIsBuddyConnected(true);
-}
- 
-const onBuddyRemoved = (evt) =>
-{
+  }
+
+  const onBuddyRemoved = (evt) => {
     console.log("Buddy removed: " + evt.buddy.name);
     setIsBuddyConnected(false);
-}
-
-const onBuddyError = (evt) =>
-{
-    console.warn("BuddyList error: " + evt.errorMessage);
-}
-
-
-// Connect then login as guest
-const loginGuest = () => {
-  console.log("Login&&&&&&&&&&&& ");
-  console.log(sfs);
-  if (sfs) {
-   var sent = sfs.send(new SFS2X.LoginRequest("", "", null, "RobotBuddy"));
   }
-};
 
-/*
- * Logout from server
- */
-function onLogoutBtn()
-{
-	var isSent = sfs.send(new SFS2X.LogoutRequest());
+  const onBuddyError = (evt) => {
+    console.warn("BuddyList error: " + evt.errorMessage);
+  }
 
-	// if (isSent){
-	// 	//enableLoginBtn(true);
-	// }
-}
 
-const onLogin = (evt) =>
-{
+  // Connect then login as guest
+  const loginGuest = () => {
+    if (sfs) {
+      var sent = sfs.send(new SFS2X.LoginRequest("", "", null, "RobotBuddy"));
+    }
+  };
+
+  /*
+   * Logout from server
+   */
+  function onLogoutBtn() {
+    var isSent = sfs.send(new SFS2X.LogoutRequest());
+
+    // if (isSent){
+    // 	//enableLoginBtn(true);
+    // }
+  }
+
+  const onLogin = (evt) => {
     console.log("Login successful; username is " + evt.user.name);
-    var rmList =  getRoomList();
-    setRooms(rmList);       
-}
- 
-function onLoginError(evt)
-{
+    var rmList = getRoomList();
+    setRooms(rmList);
+  }
+
+  function onLoginError(evt) {
     console.warn("Login failed: " + evt.errorMessage);
-}
+  }
 
   const disconnect = () => {
     if (sfs) {
@@ -335,120 +246,72 @@ function onLoginError(evt)
   };
 
   const connectToTargetParticipant = (id: number, name: string) => {
-    console.log(id);
     setCurrentPrivateChat(id);
     sfs.send(new SFS2X.AddBuddyRequest(name));
-    //sfs.send(new SFS2X.InitBuddyListRequest());
   }
 
-/*
- * Send command messages to currently selected robot buddy
- */
-const sendBuddyCommand = (cmd, value) => {
-	var params = new SFS2X.SFSObject();
-	params.putUtfString("cmd", cmd);
-	params.putInt("targetid", currentPrivateChat);
-	params.putInt("value", value);	
-	console.log("Sending command");
-	if(sfs){
-		// Get the recipient of the message, in this case my buddy
-		var buddy = sfs.buddyManager.getBuddyById(Number(currentPrivateChat));
-    console.log(currentPrivateChat);
-    console.log(buddy);
-		//console.log(sfs.buddyManager);
-		//console.log("sendBuddyMessage1:" + currentPrivateChat);
-		//console.log(currentUser.name);
-		if (typeof(buddy) !== "undefined"){//only send if connected to server
-			var isSent = sfs.send(new SFS2X.BuddyMessageRequest("buddycmd", buddy, params));
-		}
-	}
-	//console.log("sendBuddyCommand");	
-}
+  /*
+   * Send command messages to currently selected robot buddy
+   */
+  const sendBuddyCommand = (cmd, value) => {
+    var params = new SFS2X.SFSObject();
+    params.putUtfString("cmd", cmd);
+    params.putInt("targetid", currentPrivateChat);
+    params.putInt("value", value);
+    console.log("Sending command");
+    if (sfs) {
+      // Get the recipient of the message, in this case my buddy
+      var buddy = sfs.buddyManager.getBuddyById(Number(currentPrivateChat));
+      if (typeof (buddy) !== "undefined") {//only send if connected to server
+        var isSent = sfs.send(new SFS2X.BuddyMessageRequest("buddycmd", buddy, params));
+      }
+    }
+  }
 
-/*
- * Buddy message event handler
- */
-const onBuddyMessage = (event) =>{
+  /*
+   * Buddy message event handler
+   */
+  const onBuddyMessage = (event) => {
 
-	   var isItMe = event.isItMe;
-      var sender = event.buddy;
-	    var message = event.message;
-      var customParams = event.data; // SFSObject
-	   console.log("Buddy Msg recieved:");
-     console.log(isItMe);
-     console.log(sender);
-     console.log(message);    
-     console.log(event);
-     //
-     console.log(customParams.getUtfString("cmd"));
-     console.log(customParams.getInt("targetid"));
-     console.log(customParams.getInt("value"));	
+    var isItMe = event.isItMe;
+    var sender = event.buddy;
+    var message = event.message;
+    var customParams = event.data; // SFSObject
+    console.log("Buddy Msg recieved:");
+    console.log(isItMe);
+    console.log(sender);
+    console.log(message);
+    console.log(event);
+    //
+    console.log(customParams.getUtfString("cmd"));
+    console.log(customParams.getInt("targetid"));
+    console.log(customParams.getInt("value"));
 
-     var value = customParams.getInt("value");
+    var value = customParams.getInt("value");
 
-     console.log("switch1-on");
-     console.log(webBluetooth.isConnected);
+    const data = new Uint8Array([value]);
+    // update message data variable to activate write to device charactereistic
+    setMessageValue(data);
+  }
 
-     const data = new Uint8Array([value]);
-     setMessageValue(data);
-     //sendBuddyCommand("switch1", 1);
-    //  if(value === 1){
-    // const data = new Uint8Array([value]);
-    // webBluetooth.writeCharacteristic(
-    //   "4fafc201-1fb5-459e-8fcc-c5c9c331914b", 
-    //   "beb5483e-36e1-4688-b7f5-ea07361b26a8", 
-    //   data
-    // ).then(() => {
-    //   console.log("Value written to bluetooth characteristic:", value);
-    // }).catch(error => {
-    //   console.error("Error writing to bluetooth characteristic:", error);
-    // });
-    //  }
-    //  else if(value === 0){
-    // const data = new Uint8Array([value]);
-    // webBluetooth.writeCharacteristic(
-    //   "4fafc201-1fb5-459e-8fcc-c5c9c331914b", 
-    //   "beb5483e-36e1-4688-b7f5-ea07361b26a8", 
-    //   data
-    // ).then(() => {
-    //   console.log("Value written to bluetooth characteristic:", value);
-    // }).catch(error => {
-    //   console.error("Error writing to bluetooth characteristic:", error);
-    // });
-    //  }
-    //  const data = new Uint8Array([1]);
-    //  writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
-    //    .then(() => {
-    //      console.log("Value written to LEDcharacteristic:", data);
-    //    })
-    //    .catch(error => {
-    //      console.error("Error writing to the LED characteristic: ", error);
-    //    });
-       ////
-            // Write value to bluetooth characteristic
- 
-}
-
-  const joinRoom = (roomId: number) =>{
+  const joinRoom = (roomId: number) => {
     // After the successful login, send the join Room request
     sfs.send(new SFS2X.JoinRoomRequest(roomId));
   }
 
-  const onRoomJoin = (evt) =>
-  {
-      const users: string[] = evt.room._userManager._usersByName;
-      //
-      sfs.send(new SFS2X.InitBuddyListRequest());
+  const onRoomJoin = (evt) => {
+    const users: string[] = evt.room._userManager._usersByName;
+    //
+    sfs.send(new SFS2X.InitBuddyListRequest());
   }
- 
-  const onRoomJoinError = (evt) =>
-  {
-      console.warn("Room join failed: " + evt.errorMessage);
+
+  const onRoomJoinError = (evt) => {
+    console.warn("Room join failed: " + evt.errorMessage);
   }
 
   const onBuddyListInitialized = (...params: any[]) => {
     // Retrieve my buddies list
-	  var buddies = sfs.buddyManager.getBuddyList();
+    var buddies = sfs.buddyManager.getBuddyList();
     console.log("onBuddyListInitialized - Function not implemented.");
   }
 

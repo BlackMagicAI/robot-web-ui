@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
-import { 
-  Wifi, 
-  WifiOff, 
-  Battery, 
-  Signal, 
+import {
+  Wifi,
+  WifiOff,
+  Battery,
+  Signal,
   Clock,
   MapPin,
   Thermometer
@@ -69,8 +69,8 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
             ) : (
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
-            <Badge 
-              variant={isGameServerConnected ? "default" : isGameServerConnecting ? "secondary" : "destructive"} 
+            <Badge
+              variant={isGameServerConnected ? "default" : isGameServerConnecting ? "secondary" : "destructive"}
               className="text-xs"
             >
               SERVER: {isGameServerConnected ? "CONNECTED" : isGameServerConnecting ? "CONNECTING..." : "DISCONNECTED"}

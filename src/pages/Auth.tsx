@@ -34,9 +34,9 @@ const Auth = () => {
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
-  const { error } = await signIn(email, password);
-  
+
+    const { error } = await signIn(email, password);
+
     if (error) {
       toast({
         title: "Sign In Failed",
@@ -50,16 +50,16 @@ const Auth = () => {
       });
       navigate('/');
     }
-    
+
     setIsLoading(false);
   };
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     const { error } = await signUp(email, password, displayName);
-    
+
     if (error) {
       toast({
         title: "Sign Up Failed",
@@ -72,18 +72,16 @@ const Auth = () => {
         description: "Please check your email to verify your account."
       });
     }
-    
+
     setIsLoading(false);
   };
 
   const handleGuestSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
+
     //const { error } = await signInAsGuest(guestUsername);
-    console.log("testing1234"); 
     await connect();
-    console.log("testing!!!!!");
     const error = false;
 
     if (error) {
@@ -99,7 +97,7 @@ const Auth = () => {
       });
       navigate('/');
     }
-    
+
     setIsLoading(false);
   };
 

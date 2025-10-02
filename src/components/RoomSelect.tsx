@@ -57,23 +57,22 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
 
   useEffect(() => {
     if (isGameServerConnected) { // Check if myObject is not null before using it
-      console.log('Room connect%%%%%%');
       // Perform actions with the updated myObject here      
-      if(Array.isArray(rooms) && rooms.length > 0){
-        for(var r in rooms){        
-            const obj: Room = {
-              id: rooms[r].id.toString(),
-              name: rooms[r].name,
-              description: 'Robot control room',
-              playerCount: rooms[r].userCount,
-              maxPlayers: rooms[r].maxUsers,
-              difficulty: 'Easy',
-              type: 'Exploration'
-            }
-            roomData.push(obj);            
+      if (Array.isArray(rooms) && rooms.length > 0) {
+        for (var r in rooms) {
+          const obj: Room = {
+            id: rooms[r].id.toString(),
+            name: rooms[r].name,
+            description: 'Robot control room',
+            playerCount: rooms[r].userCount,
+            maxPlayers: rooms[r].maxUsers,
+            difficulty: 'Easy',
+            type: 'Exploration'
+          }
+          roomData.push(obj);
         }
         setMockRooms(roomData);
-      }        
+      }
     }
   }, [isGameServerConnected, rooms]); // Dependency array: runs when myObject changes
 
@@ -98,11 +97,10 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
             {mockRooms.map((room) => (
               <div
                 key={room.id}
-                className={`p-4 rounded-lg border cursor-pointer transition-all hover:bg-accent ${
-                  selectedRoom?.id === room.id 
-                    ? 'border-primary bg-primary/5' 
-                    : 'border-border'
-                }`}
+                className={`p-4 rounded-lg border cursor-pointer transition-all hover:bg-accent ${selectedRoom?.id === room.id
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border'
+                  }`}
                 onClick={() => handleRoomSelect(room)}
               >
                 <div className="flex items-start justify-between mb-2">

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 
 export interface WebBluetoothContextType {
   isConnected: boolean;
@@ -11,8 +11,8 @@ export interface WebBluetoothContextType {
   writeCharacteristic: (serviceUuid: string, characteristicUuid: string, value: BufferSource) => Promise<boolean>;
   readCharacteristic: (serviceUuid: string, characteristicUuid: string) => Promise<DataView | null>;
   subscribeToNotifications: (
-    serviceUuid: string, 
-    characteristicUuid: string, 
+    serviceUuid: string,
+    characteristicUuid: string,
     callback: (value: DataView) => void
   ) => Promise<boolean>;
   unsubscribeFromNotifications: (serviceUuid: string, characteristicUuid: string) => Promise<boolean>;
@@ -39,27 +39,6 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [gattServer, setGattServer] = useState<BluetoothRemoteGATTServer | null>(null);
   const [characteristics, setCharacteristics] = useState<Map<string, BluetoothRemoteGATTCharacteristic>>(new Map());
-
-  const isMounted = useRef(false);
-  
-  useEffect(() => {
-    // if(!gattServer && connectedDevice){
-    //   connectedDevice.gatt.connect()
-    //   .then(server => {
-    //     console.log(2.2)
-    //     setGattServer(server);
-    //     // return server.getPrimaryServices();
-    //   })
-    // }
-    console.log("Mount state@@@@:");
-    console.log(isMounted.current);
-    
-    isMounted.current = true; // Component is mounted
-
-    return () => {
-      isMounted.current = false; // Component is unmounted
-    };
-  }, []);
 
   // Check if Web Bluetooth API is supported
   const isBluetoothSupported = (): boolean => {
@@ -92,42 +71,24 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   }, []);
 
   const connectToDevice = useCallback(async (device: BluetoothDevice): Promise<boolean> => {
-    console.log("XXXXX");
+
     if (!device.gatt) {
       setConnectionError('Device does not support GATT');
       return false;
     }
-    console.log("YYYYY");
+
     try {
       setConnectionError(null);
-      //const server = await device.gatt.connect();
 
       device.gatt.connect()
-      .then(server => {
-        console.log(2)
-        setGattServer(server);
-        return server.getPrimaryServices();
-      })
-      .then(services => {
-        console.log(3)
-        console.log(services);
-        //return service.getCharacteristic('battery_level');
-        return services[0].getCharacteristics();
-      })
-      //  .then(characteristics => {
-      //   console.log(4)
-      //   console.log(characteristics);
-      //   return characteristics[0].readValue()
-      // })
-      // .then(value => {
-      //   console.log(5)
-      //   //console.log(value.getUint8(0))
-      // })
-      .catch(error => { 
-         console.log('error: ', error) 
-      })
+        .then(server => {
+          setGattServer(server);
+          return server.getPrimaryServices();
+        })
+        .catch(error => {
+          console.log('error: ', error)
+        })
 
-      // setGattServer(server);
       setConnectedDevice(device);
       setIsConnected(true);
 
@@ -158,27 +119,25 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   }, [gattServer]);
 
   const getCharacteristic = async (serviceUuid: string, characteristicUuid: string): Promise<BluetoothRemoteGATTCharacteristic | null> => {
-    console.log("?+?+?+?+?-X");
     if (!gattServer || !gattServer.connected) {
       setConnectionError('Not connected to any device');
       return null;
     }
 
     const key = `${serviceUuid}:${characteristicUuid}`;
-    
-    console.log("?+?+?+?+?-0");
+
     // Check if we already have this characteristic cached
     if (characteristics.has(key)) {
       return characteristics.get(key)!;
     }
-console.log("?+?+?+?+?-1");
+
     try {
       const service = await gattServer.getPrimaryService(serviceUuid);
       const characteristic = await service.getCharacteristic(characteristicUuid);
-      
+
       // Cache the characteristic
       setCharacteristics(prev => new Map(prev.set(key, characteristic)));
-      
+
       return characteristic;
     } catch (error) {
       setConnectionError(`Failed to get characteristic: ${error instanceof Error ? error.message : 'Unknown error'}`);
@@ -187,17 +146,13 @@ console.log("?+?+?+?+?-1");
   };
 
   const writeCharacteristic = useCallback(async (
-    serviceUuid: string, 
-    characteristicUuid: string, 
+    serviceUuid: string,
+    characteristicUuid: string,
     value: BufferSource
   ): Promise<boolean> => {
     const characteristic = await getCharacteristic(serviceUuid, characteristicUuid);
     if (!characteristic) return false;
-    console.log("************");
-console.log(characteristic);
     try {
-      //const data = new Uint8Array([1]);
-      //await characteristic.writeValue(data);
       await characteristic.writeValue(value);
       return true;
     } catch (error) {
@@ -207,7 +162,7 @@ console.log(characteristic);
   }, [gattServer, characteristics]);
 
   const readCharacteristic = useCallback(async (
-    serviceUuid: string, 
+    serviceUuid: string,
     characteristicUuid: string
   ): Promise<DataView | null> => {
     const characteristic = await getCharacteristic(serviceUuid, characteristicUuid);
@@ -223,8 +178,8 @@ console.log(characteristic);
   }, [gattServer, characteristics]);
 
   const subscribeToNotifications = useCallback(async (
-    serviceUuid: string, 
-    characteristicUuid: string, 
+    serviceUuid: string,
+    characteristicUuid: string,
     callback: (value: DataView) => void
   ): Promise<boolean> => {
     const characteristic = await getCharacteristic(serviceUuid, characteristicUuid);
@@ -232,7 +187,7 @@ console.log(characteristic);
 
     try {
       await characteristic.startNotifications();
-      
+
       const handleNotification = (event: Event) => {
         const target = event.target as BluetoothRemoteGATTCharacteristic;
         if (target.value) {
@@ -249,7 +204,7 @@ console.log(characteristic);
   }, [gattServer, characteristics]);
 
   const unsubscribeFromNotifications = useCallback(async (
-    serviceUuid: string, 
+    serviceUuid: string,
     characteristicUuid: string
   ): Promise<boolean> => {
     const characteristic = await getCharacteristic(serviceUuid, characteristicUuid);
