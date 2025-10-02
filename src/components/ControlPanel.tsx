@@ -50,27 +50,26 @@ export const ControlPanel = () => {
     console.log(value);
     if (value) {
       console.log("switch1-on");
-      //sendBuddyCommand("switch1", 1);
-      const data = new Uint8Array([1]);
-      writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
-        .then(() => {
-          console.log("Value written to LEDcharacteristic:", data);
-        })
-        .catch(error => {
-          console.error("Error writing to the LED characteristic: ", error);
-        });
-
+      sendBuddyCommand("switch1", 1);
+      // const data = new Uint8Array([1]);
+      // writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
+      //   .then(() => {
+      //     console.log("Value written to LEDcharacteristic:", data);
+      //   })
+      //   .catch(error => {
+      //     console.error("Error writing to the LED characteristic: ", error);
+      //   });
     } else if (value === false) {
       console.log("switch1-off");
-      //sendBuddyCommand("switch1", 0);
-      const data = new Uint8Array([0]);
-      writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
-        .then(() => {
-          console.log("Value written to LEDcharacteristic:", data);
-        })
-        .catch(error => {
-          console.error("Error writing to the LED characteristic: ", error);
-        });
+      sendBuddyCommand("switch1", 0);
+      // const data = new Uint8Array([0]);
+      // writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
+      //   .then(() => {
+      //     console.log("Value written to LEDcharacteristic:", data);
+      //   })
+      //   .catch(error => {
+      //     console.error("Error writing to the LED characteristic: ", error);
+      //   });
     }
     // const data = new Uint8Array([1]);
     // writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", value)
@@ -115,12 +114,12 @@ export const ControlPanel = () => {
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">Connectivity</h4>
           <Button 
-            variant={isBleConnected ? "secondary" : "outline"}
+            variant={false ? "secondary" : "outline"}
             className="w-full"
             onClick={handleBleConnect}
           >
             <Bluetooth className="w-4 h-4 mr-2" />
-            {isBleConnected ? "BLE Connected" : "BLE Connect"}
+            {false ? "BLE Connected" : "BLE Connect"}
           </Button>
         </div>
 

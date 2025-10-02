@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useEffect, useRef } from 'react';
 
 export interface WebBluetoothContextType {
   isConnected: boolean;
@@ -40,6 +40,27 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   const [gattServer, setGattServer] = useState<BluetoothRemoteGATTServer | null>(null);
   const [characteristics, setCharacteristics] = useState<Map<string, BluetoothRemoteGATTCharacteristic>>(new Map());
 
+  const isMounted = useRef(false);
+  
+  useEffect(() => {
+    // if(!gattServer && connectedDevice){
+    //   connectedDevice.gatt.connect()
+    //   .then(server => {
+    //     console.log(2.2)
+    //     setGattServer(server);
+    //     // return server.getPrimaryServices();
+    //   })
+    // }
+    console.log("Mount state@@@@:");
+    console.log(isMounted.current);
+    
+    isMounted.current = true; // Component is mounted
+
+    return () => {
+      isMounted.current = false; // Component is unmounted
+    };
+  }, []);
+
   // Check if Web Bluetooth API is supported
   const isBluetoothSupported = (): boolean => {
     return typeof navigator !== 'undefined' && 'bluetooth' in navigator;
@@ -71,11 +92,12 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   }, []);
 
   const connectToDevice = useCallback(async (device: BluetoothDevice): Promise<boolean> => {
+    console.log("XXXXX");
     if (!device.gatt) {
       setConnectionError('Device does not support GATT');
       return false;
     }
-
+    console.log("YYYYY");
     try {
       setConnectionError(null);
       //const server = await device.gatt.connect();
@@ -136,6 +158,7 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   }, [gattServer]);
 
   const getCharacteristic = async (serviceUuid: string, characteristicUuid: string): Promise<BluetoothRemoteGATTCharacteristic | null> => {
+    console.log("?+?+?+?+?-X");
     if (!gattServer || !gattServer.connected) {
       setConnectionError('Not connected to any device');
       return null;
@@ -143,11 +166,12 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
 
     const key = `${serviceUuid}:${characteristicUuid}`;
     
+    console.log("?+?+?+?+?-0");
     // Check if we already have this characteristic cached
     if (characteristics.has(key)) {
       return characteristics.get(key)!;
     }
-
+console.log("?+?+?+?+?-1");
     try {
       const service = await gattServer.getPrimaryService(serviceUuid);
       const characteristic = await service.getCharacteristic(characteristicUuid);
@@ -169,6 +193,7 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
   ): Promise<boolean> => {
     const characteristic = await getCharacteristic(serviceUuid, characteristicUuid);
     if (!characteristic) return false;
+    console.log("************");
 console.log(characteristic);
     try {
       //const data = new Uint8Array([1]);

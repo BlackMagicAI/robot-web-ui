@@ -47,6 +47,10 @@ interface GameServerProviderProps {
   webBluetooth: WebBluetoothContextType;
 }
 
+// interface GameServerProviderProps {
+//   children: ReactNode;
+// }
+
 export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children, webBluetooth }) => {
   const [isGameServerConnected, setIsGameServerConnected] = useState(false);
   const [isGameServerConnecting, setIsGameServerConnecting] = useState(false);
@@ -56,7 +60,8 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
   const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
-
+  // const [characteristic, setCharacteristic] = useState<BluetoothRemoteGATTCharacteristic | null>(null);
+  const [messageValue, setMessageValue] = useState<Uint8Array>();
    // Set connection parameters
    const config: Config = {
     host : "127.0.0.1",
@@ -69,15 +74,62 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
  useEffect(() => {
   //connect();
   console.log('useEffect#######');
+  console.log(webBluetooth.isConnected);
+  // if(webBluetooth.isConnected){
+  //     const data = new Uint8Array([1]);
+  //     webBluetooth.writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
+  //       .then(() => {
+  //         console.log("Value written to LEDcharacteristic:", data);
+  //       })
+  //       .catch(error => {
+  //         console.error("Error writing to the LED characteristic: ", error);
+  //       });
+  // }
   // Initialize SFS2X client
-const smartFox = new SFS2X.SmartFox(config);
-  setSfs(smartFox);
+  if(!sfs){
+    const smartFox = new SFS2X.SmartFox(config);
+    setSfs(smartFox);
+  }
+  }, [sfs]);
+
+  useEffect(() => {
+    //connect();
+    console.log('webBluetooth-useEffect^^^^');
+    console.log(webBluetooth.isConnected);
+    if(webBluetooth.isConnected){
+        //const data = new Uint8Array([1]);
+        webBluetooth.writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", messageValue)
+          .then(() => {
+            console.log("Value written to LEDcharacteristic:", messageValue);
+          })
+          .catch(error => {
+            console.error("Error writing to the LED characteristic: ", messageValue);
+          });
+    }
+    
   // return () => {
   //   disconnect();
   // };
-}, []);
-  console.log("------------");
+}, [messageValue]);
 
+  console.log("Start GameServerProvider------------");
+
+  const initX = async () => {
+    let options = {
+      filters: [
+        { services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"] }
+      ]
+    };
+    const device = await webBluetooth.scanForDevices(options);
+    if (device) {
+      console.log(device);
+      await webBluetooth.connectToDevice(device);
+    }
+  
+  }
+
+  //initX();
+  
   const connect = async () => {
     // console.log("+++++++++++:" + userRole);
     // console.log("+++++++++++:" + guestName);
@@ -328,24 +380,53 @@ const onBuddyMessage = (event) =>{
      console.log(message);    
      console.log(event);
      //
-     const cmd = customParams.getUtfString("cmd");
-     const targetId = customParams.getInt("targetid");
-     const value = customParams.getInt("value");
-     console.log(cmd);
-     console.log(targetId);
-     console.log(value);
+     console.log(customParams.getUtfString("cmd"));
+     console.log(customParams.getInt("targetid"));
+     console.log(customParams.getInt("value"));	
 
-     // Write value to bluetooth characteristic
+     var value = customParams.getInt("value");
+
+     console.log("switch1-on");
+     console.log(webBluetooth.isConnected);
+
      const data = new Uint8Array([value]);
-     webBluetooth.writeCharacteristic(
-       "4fafc201-1fb5-459e-8fcc-c5c9c331914b", 
-       "beb5483e-36e1-4688-b7f5-ea07361b26a8", 
-       data
-     ).then(() => {
-       console.log("Value written to bluetooth characteristic:", value);
-     }).catch(error => {
-       console.error("Error writing to bluetooth characteristic:", error);
-     });
+     setMessageValue(data);
+     //sendBuddyCommand("switch1", 1);
+    //  if(value === 1){
+    // const data = new Uint8Array([value]);
+    // webBluetooth.writeCharacteristic(
+    //   "4fafc201-1fb5-459e-8fcc-c5c9c331914b", 
+    //   "beb5483e-36e1-4688-b7f5-ea07361b26a8", 
+    //   data
+    // ).then(() => {
+    //   console.log("Value written to bluetooth characteristic:", value);
+    // }).catch(error => {
+    //   console.error("Error writing to bluetooth characteristic:", error);
+    // });
+    //  }
+    //  else if(value === 0){
+    // const data = new Uint8Array([value]);
+    // webBluetooth.writeCharacteristic(
+    //   "4fafc201-1fb5-459e-8fcc-c5c9c331914b", 
+    //   "beb5483e-36e1-4688-b7f5-ea07361b26a8", 
+    //   data
+    // ).then(() => {
+    //   console.log("Value written to bluetooth characteristic:", value);
+    // }).catch(error => {
+    //   console.error("Error writing to bluetooth characteristic:", error);
+    // });
+    //  }
+    //  const data = new Uint8Array([1]);
+    //  writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", data)
+    //    .then(() => {
+    //      console.log("Value written to LEDcharacteristic:", data);
+    //    })
+    //    .catch(error => {
+    //      console.error("Error writing to the LED characteristic: ", error);
+    //    });
+       ////
+            // Write value to bluetooth characteristic
+ 
 }
 
   const joinRoom = (roomId: number) =>{
