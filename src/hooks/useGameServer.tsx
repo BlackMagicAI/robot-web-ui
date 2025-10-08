@@ -165,7 +165,6 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
       var rooms = sfs.roomManager.getRoomList();
       return rooms;
     }
-
   }
 
   const getRoomUserList = (): SFS2X.SFSUser[] => {

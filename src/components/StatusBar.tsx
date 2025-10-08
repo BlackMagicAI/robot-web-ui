@@ -56,7 +56,7 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
             <Badge variant={isBuddyConnected ? "default" : "destructive"} className="text-xs">
-              ROBOT: {isBuddyConnected ? "CONNECTED" : "DISCONNECTED"}
+              BUDDY: {isBuddyConnected ? "CONNECTED" : "DISCONNECTED"}
             </Badge>
           </div>
 

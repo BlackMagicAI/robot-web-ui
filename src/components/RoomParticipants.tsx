@@ -65,9 +65,9 @@ export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
           isReady: true,
           isItMe: userList[u].isItMe
         }
-        if(!obj.isItMe){
+        //if(!obj.isItMe){
           roomParticipants.push(obj);
-        }        
+        //}        
       }
       setParticipants(roomParticipants);      
     }
@@ -99,9 +99,12 @@ export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
           <div className="space-y-3">
             {participants.map((participant) => (
               <div
-                key={participant.id}
-                className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-accent transition-colors"
-                onClick={() => handleParticipantSelect(participant)}
+                key={participant.id}                
+                className={`flex items-center gap-3 p-3 rounded-lg border border-border transition-colors ${participant.isItMe
+                  ? 'hover:bg-red-500'
+                  : 'hover:bg-accent'
+                  }`}
+                onClick={() => participant.isItMe ? null: handleParticipantSelect(participant)}
               >
                 <div className="relative">
                   <Avatar className="h-10 w-10">
@@ -119,7 +122,7 @@ export const RoomParticipants = ({ room }: RoomParticipantsProps) => {
                   <div className="flex items-center gap-1 mb-1">
                     {getRoleIcon(participant.role)}
                     <span className="font-medium text-sm truncate">
-                      {participant.username}
+                      {participant.isItMe ? participant.username + " (You)" : participant.username}
                     </span>
                     {participant.isReady && (
                       <Zap className="h-3 w-3 text-emerald-500 ml-auto" />

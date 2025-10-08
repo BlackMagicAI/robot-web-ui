@@ -83,7 +83,7 @@ const Auth = () => {
     //const { error } = await signInAsGuest(guestUsername);
     await connect();
     const error = false;
-
+    
     if (error) {
       toast({
         title: "Guest Sign In Failed",

@@ -23,8 +23,8 @@ export const ControlPanel = () => {
   const [speed, setSpeed] = useState([50]);
   const [power, setPower] = useState([75]);
   const [sensitivity, setSensitivity] = useState([60]);
-  const [isAutonomous, setIsAutonomous] = useState(false);
-  const [isArmed, setIsArmed] = useState(false);
+  const [isSwitch1, setIsSwitch1] = useState(false);
+  const [isSwitch2, setIsSwitch2] = useState(false);
   const [isRunning, setIsRunning] = useState(false);
 
   const { isGameServerConnected, sendBuddyCommand } = useGameServer();
@@ -44,7 +44,7 @@ export const ControlPanel = () => {
   };
 
   const handleSwitch1 = (value) => {
-    setIsAutonomous(value);
+    setIsSwitch1(value);
     if (isGameServerConnected && value) {
       console.log("switch1-on");
       sendBuddyCommand("switch1", 1);
@@ -123,10 +123,10 @@ export const ControlPanel = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Power className="w-4 h-4" />
-              <span className="text-sm">Autonomous Mode</span>
+              <span className="text-sm">Switch 1</span>
             </div>
             <Switch
-              checked={isAutonomous}
+              checked={isSwitch1}
               onCheckedChange={handleSwitch1}
             />
           </div>
@@ -134,11 +134,11 @@ export const ControlPanel = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shield className="w-4 h-4" />
-              <span className="text-sm">Armed</span>
+              <span className="text-sm">Switch 2</span>
             </div>
             <Switch
-              checked={isArmed}
-              onCheckedChange={setIsArmed}
+              checked={isSwitch2}
+              onCheckedChange={setIsSwitch2}
             />
           </div>
         </div>
