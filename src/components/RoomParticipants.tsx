@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Users, Zap, Bot, PersonStanding } from 'lucide-react';
+import { Users, Zap, Bot, PersonStanding, BrainCircuit } from 'lucide-react';
 import type { Room } from './RoomSelect';
 import { useGameServer } from '@/hooks/useGameServer';
 import { useEffect, useState } from 'react';
@@ -12,7 +12,7 @@ interface Participant {
   username: string;
   avatar?: string;
   status: 'online' | 'away' | 'busy';
-  role: 'operator' | 'ai' | 'agent';
+  role: 'operator' | 'ai' | 'robot';
   level: number;
   isReady: boolean;
   isItMe: boolean;
@@ -39,8 +39,10 @@ const getRoleIcon = (role: Participant['role']) => {
   switch (role) {
     case 'operator':
       return <PersonStanding className="h-3 w-3 text-amber-500" />;
-    case 'ai':
+    case 'robot':
       return <Bot className="h-3 w-3 text-blue-500" />;
+    case 'ai':
+      return <BrainCircuit className="h-3 w-3 text-yellow-500" />;     
     default:
       return null;
   }

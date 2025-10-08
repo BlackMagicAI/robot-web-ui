@@ -80,10 +80,9 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    await signInAsGuest(guestUsername, guestRole);
-    await connect();
-    const error = false;
-    
+    const { error } = await signInAsGuest(guestUsername, guestRole);
+    await connect();    
+
     if (error) {
       toast({
         title: "Guest Sign In Failed",

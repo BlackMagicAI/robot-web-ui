@@ -86,7 +86,7 @@ export const ControlPanel = () => {
             variant={isBleConnected ? "secondary" : "outline"}
             className="w-full"
             onClick={handleBleConnect}
-            disabled={guestRole !== 'operator'}
+            disabled={guestRole !== 'robot'}
           >
             <Bluetooth className="w-4 h-4 mr-2" />
             {isBleConnected ? "BLE Connected" : "BLE Connect"}
