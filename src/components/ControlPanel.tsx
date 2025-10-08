@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useGameServer } from '@/hooks/useGameServer';
 import { useWebBluetooth } from '@/hooks/useWebBluetooth';
+import { useAuth } from '@/hooks/useAuth';
 
 export const ControlPanel = () => {
   const [speed, setSpeed] = useState([50]);
@@ -29,6 +30,7 @@ export const ControlPanel = () => {
 
   const { isGameServerConnected, sendBuddyCommand } = useGameServer();
   const { isConnected: isBleConnected, scanForDevices, connectToDevice } = useWebBluetooth();
+  const { guestRole } = useAuth();
 
   const handleBleConnect = async () => {
     let options = {
@@ -84,6 +86,7 @@ export const ControlPanel = () => {
             variant={isBleConnected ? "secondary" : "outline"}
             className="w-full"
             onClick={handleBleConnect}
+            disabled={guestRole !== 'operator'}
           >
             <Bluetooth className="w-4 h-4 mr-2" />
             {isBleConnected ? "BLE Connected" : "BLE Connect"}

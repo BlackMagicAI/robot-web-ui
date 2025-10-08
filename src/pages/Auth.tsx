@@ -80,7 +80,7 @@ const Auth = () => {
     e.preventDefault();
     setIsLoading(true);
 
-    //const { error } = await signInAsGuest(guestUsername);
+    await signInAsGuest(guestUsername, guestRole);
     await connect();
     const error = false;
     
