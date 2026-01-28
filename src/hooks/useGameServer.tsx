@@ -78,7 +78,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   useEffect(() => {
 
     if (webBluetooth.isConnected && messageValue) {
-      webBluetooth.writeCharacteristic("4fafc201-1fb5-459e-8fcc-c5c9c331914b", "beb5483e-36e1-4688-b7f5-ea07361b26a8", messageValue as BufferSource)
+      webBluetooth.writeCharacteristic("0000DFB0-0000-1000-8000-00805F9B34FB", "beb5483e-36e1-4688-b7f5-ea07361b26a8", messageValue as BufferSource)
         .then(() => {
           console.log("Value written to LEDcharacteristic:", messageValue);
         })
