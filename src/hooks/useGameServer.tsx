@@ -78,12 +78,28 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   useEffect(() => {
 
     if (webBluetooth.isConnected && messageValue) {
-      webBluetooth.writeCharacteristic("0000DFB0-0000-1000-8000-00805F9B34FB", "0000DFB0-0000-1000-8000-00805F9B34FB", messageValue as BufferSource)
+      
+      //webBluetooth.getCharacteristic("0000DFB1-0000-1000-8000-00805F9B34FB", "0000DFB1-0000-1000-8000-00805F9B34FB")
+      // webBluetooth.writeCharacteristic("0xDFB0", "0xDFB1", encoder.encode(data))
+      // webBluetooth.getCharacteristic("0xDFB0", "0xDFB1")
+      // .then(async characteristic => {
+      //   console.log("characteristic");
+      //   console.log(characteristic);
+      //   // write string
+      //   //await characteristic.writeValue(encoder.encode(data));
+      //   await characteristic.writeValueWithoutResponse(encoder.encode(data))
+      // })
+      // webBluetooth.writeCharacteristic("0000DFB0-0000-1000-8000-00805F9B34FB", "0000DFB0-0000-1000-8000-00805F9B34FB", encoder.encode(data) as BufferSource)
+      //   .then(() => {
+      //     console.log("Value written to LEDcharacteristic:", messageValue);
+      //   })
+      webBluetooth.writeCharacteristic("0000dfb0-0000-1000-8000-00805f9b34fb", "0000dfb1-0000-1000-8000-00805f9b34fb", messageValue as BufferSource)
         .then(() => {
           console.log("Value written to LEDcharacteristic:", messageValue);
         })
         .catch(error => {
-          console.error("Error writing to the LED characteristic: ", messageValue);
+          console.error("Error writing to the LED characteristic: ", error);
+          console.error(error);
         });
     }
   }, [messageValue]);
@@ -256,7 +272,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     var params = new SFS2X.SFSObject();
     params.putUtfString("cmd", cmd);
     params.putInt("targetid", currentPrivateChat);
-    params.putInt("value", value);
+    params.putUtfString("value", value);
     console.log("Sending command");
     if (sfs) {
       // Get the recipient of the message, in this case my buddy
@@ -284,11 +300,15 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     //
     console.log(customParams.getUtfString("cmd"));
     console.log(customParams.getInt("targetid"));
-    console.log(customParams.getInt("value"));
+    console.log(customParams.getUtfString("value"));
 
-    var value = customParams.getInt("value");
+    var value = customParams.getUtfString("value");
 
-    const data = new Uint8Array([value]);
+    // const data = new Uint8Array([value]);
+    // var data = "l0,0\n"
+      const encoder = new TextEncoder();
+      const data = encoder.encode(value);
+     
     // update message data variable to activate write to device charactereistic
     setMessageValue(data);
   }

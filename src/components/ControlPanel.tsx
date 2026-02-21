@@ -32,13 +32,18 @@ export const ControlPanel = () => {
   const { isConnected: isBleConnected, scanForDevices, connectToDevice } = useWebBluetooth();
   const { guestRole } = useAuth();
 
+  // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and deiscover services
   const handleBleConnect = async () => {
+    console.log("handleBleConnect*******");
     let options = {
-      filters: [
-        { services: ["4fafc201-1fb5-459e-8fcc-c5c9c331914b"] }
-      ]
+      // filters: [
+      //   { services: ["00001812-0000-1000-8000-00805f9b34fb", "0000dfb0-0000-1000-8000-00805f9b34fb"] }
+      // ],
+      optionalServices: ["00001812-0000-1000-8000-00805f9b34fb", "0000dfb0-0000-1000-8000-00805f9b34fb"],
+      acceptAllDevices: true
     };
     const device = await scanForDevices(options);
+    console.log(device);
     if (device) {
       await connectToDevice(device);
     }
@@ -49,10 +54,10 @@ export const ControlPanel = () => {
     setIsSwitch1(value);
     if (isGameServerConnected && value) {
       console.log("switch1-on");
-      sendBuddyCommand("switch1", 1);
+      sendBuddyCommand("switch1", "o1,0\n");
     } else if (value === false) {
       console.log("switch1-off");
-      sendBuddyCommand("switch1", 0);
+      sendBuddyCommand("switch1", "l1,0\n");
     }
   }
 
