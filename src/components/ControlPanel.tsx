@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Power,
   Square,
-  Play,
-  Pause,
-  RotateCcw,
   Zap,
   Settings,
   Shield,
@@ -26,11 +29,19 @@ export const ControlPanel = () => {
   const [sensitivity, setSensitivity] = useState([60]);
   const [isSwitch1, setIsSwitch1] = useState(false);
   const [isSwitch2, setIsSwitch2] = useState(false);
-  const [isRunning, setIsRunning] = useState(false);
+  const [protocolNames, setProtocolNames] = useState<string[]>([]);
+  const [selectedProtocol, setSelectedProtocol] = useState<string>('');
 
   const { isGameServerConnected, sendBuddyCommand } = useGameServer();
   const { isConnected: isBleConnected, scanForDevices, connectToDevice, disconnect } = useWebBluetooth();
   const { guestRole } = useAuth();
+
+  useEffect(() => {
+    fetch('/jsonprotocols.json')
+      .then(res => res.json())
+      .then(data => setProtocolNames(Object.keys(data)))
+      .catch(err => console.error('Failed to load protocols:', err));
+  }, []);
 
   // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services
   const handleBleConnect = async () => {
@@ -98,30 +109,21 @@ export const ControlPanel = () => {
           </Button>
         </div>
 
-        {/* Main Controls */}
+        {/* Protocol Selection */}
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h4 className="text-sm font-medium text-muted-foreground">System Status</h4>
-            <Badge variant={isRunning ? "default" : "secondary"}>
-              {isRunning ? "ACTIVE" : "STANDBY"}
-            </Badge>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Button
-              variant={isRunning ? "secondary" : "default"}
-              onClick={() => setIsRunning(!isRunning)}
-              className="flex items-center gap-2"
-            >
-              {isRunning ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
-              {isRunning ? "Pause" : "Start"}
-            </Button>
-
-            <Button variant="outline">
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Reset
-            </Button>
-          </div>
+          <h4 className="text-sm font-medium text-muted-foreground">Protocol</h4>
+          <Select value={selectedProtocol} onValueChange={setSelectedProtocol}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Select a protocol" />
+            </SelectTrigger>
+            <SelectContent>
+              {protocolNames.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Mode Controls */}
