@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { VirtualJoystick } from '@/components/VirtualJoystick';
 import { CameraViewer } from '@/components/CameraViewer';
 import { ControlPanel } from '@/components/ControlPanel';
@@ -14,10 +14,23 @@ interface JoystickData {
   angle: number;
 }
 
+export type JsonCmdLookUp = Record<string, string | Record<string, number> | boolean>;
+
 const Index = () => {
   const [isRobotConnected, setIsRobotConnected] = useState(true);
   const [joystickData, setJoystickData] = useState<JoystickData>({ x: 0, y: 0, distance: 0, angle: 0 });
   const [selectedRoom, setSelectedRoom] = useState<Room | undefined>();
+  const [protocolsData, setProtocolsData] = useState<Record<string, JsonCmdLookUp>>({});
+  const [selectedProtocol, setSelectedProtocol] = useState<string>('');
+
+  const jsonCmdLookUp: JsonCmdLookUp | null = selectedProtocol ? protocolsData[selectedProtocol] ?? null : null;
+
+  useEffect(() => {
+    fetch('/jsonprotocols.json')
+      .then(res => res.json())
+      .then(data => setProtocolsData(data))
+      .catch(err => console.error('Failed to load protocols:', err));
+  }, []);
 
   const handleJoystickMove = (data: JoystickData) => {
     setJoystickData(data);
@@ -38,7 +51,12 @@ const Index = () => {
       <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-64px)]">
         {/* Left Column - Control Panel */}
         <div className="space-y-4">
-          <ControlPanel />
+          <ControlPanel
+            protocolNames={Object.keys(protocolsData)}
+            selectedProtocol={selectedProtocol}
+            onProtocolChange={setSelectedProtocol}
+            jsonCmdLookUp={jsonCmdLookUp}
+          />
           <MessagePanel />
         </div>
         
@@ -47,7 +65,7 @@ const Index = () => {
           <CameraViewer 
             title="Main Camera Feed"
           />
-          <VirtualJoystick onMove={handleJoystickMove} size={180} />
+          <VirtualJoystick onMove={handleJoystickMove} size={180} jsonCmdLookUp={jsonCmdLookUp} />
         </div>
         
         {/* Right Column - Console & Room Management */}

@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import type { JsonCmdLookUp } from '@/pages/Index';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -23,25 +24,23 @@ import { useGameServer } from '@/hooks/useGameServer';
 import { useWebBluetooth } from '@/hooks/useWebBluetooth';
 import { useAuth } from '@/hooks/useAuth';
 
-export const ControlPanel = () => {
+interface ControlPanelProps {
+  protocolNames: string[];
+  selectedProtocol: string;
+  onProtocolChange: (value: string) => void;
+  jsonCmdLookUp: JsonCmdLookUp | null;
+}
+
+export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange, jsonCmdLookUp }: ControlPanelProps) => {
   const [speed, setSpeed] = useState([50]);
   const [power, setPower] = useState([75]);
   const [sensitivity, setSensitivity] = useState([60]);
   const [isSwitch1, setIsSwitch1] = useState(false);
   const [isSwitch2, setIsSwitch2] = useState(false);
-  const [protocolNames, setProtocolNames] = useState<string[]>([]);
-  const [selectedProtocol, setSelectedProtocol] = useState<string>('');
 
   const { isGameServerConnected, sendBuddyCommand } = useGameServer();
   const { isConnected: isBleConnected, scanForDevices, connectToDevice, disconnect } = useWebBluetooth();
   const { guestRole } = useAuth();
-
-  useEffect(() => {
-    fetch('/jsonprotocols.json')
-      .then(res => res.json())
-      .then(data => setProtocolNames(Object.keys(data)))
-      .catch(err => console.error('Failed to load protocols:', err));
-  }, []);
 
   // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services
   const handleBleConnect = async () => {
@@ -112,7 +111,7 @@ export const ControlPanel = () => {
         {/* Protocol Selection */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">Protocol</h4>
-          <Select value={selectedProtocol} onValueChange={setSelectedProtocol}>
+          <Select value={selectedProtocol} onValueChange={onProtocolChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a protocol" />
             </SelectTrigger>

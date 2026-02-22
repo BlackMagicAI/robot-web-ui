@@ -1,6 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Card } from '@/components/ui/card';
 
+import type { JsonCmdLookUp } from '@/pages/Index';
+
 interface JoystickData {
   x: number; // -1 to 1
   y: number; // -1 to 1
@@ -11,9 +13,10 @@ interface JoystickData {
 interface VirtualJoystickProps {
   onMove?: (data: JoystickData) => void;
   size?: number;
+  jsonCmdLookUp?: JsonCmdLookUp | null;
 }
 
-export const VirtualJoystick = ({ onMove, size = 150 }: VirtualJoystickProps) => {
+export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp }: VirtualJoystickProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [knobPosition, setKnobPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
