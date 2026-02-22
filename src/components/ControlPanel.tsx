@@ -29,16 +29,17 @@ export const ControlPanel = () => {
   const [isRunning, setIsRunning] = useState(false);
 
   const { isGameServerConnected, sendBuddyCommand } = useGameServer();
-  const { isConnected: isBleConnected, scanForDevices, connectToDevice } = useWebBluetooth();
+  const { isConnected: isBleConnected, scanForDevices, connectToDevice, disconnect } = useWebBluetooth();
   const { guestRole } = useAuth();
 
   // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services
   const handleBleConnect = async () => {
+    if (isBleConnected) {
+      await disconnect();
+      return;
+    }
     console.log("handleBleConnect*******");
     let options = {
-      // filters: [
-      //   { services: ["00001812-0000-1000-8000-00805f9b34fb", "0000dfb0-0000-1000-8000-00805f9b34fb"] }
-      // ],
       optionalServices: ["00001812-0000-1000-8000-00805f9b34fb", "0000dfb0-0000-1000-8000-00805f9b34fb"],
       acceptAllDevices: true
     };
@@ -47,7 +48,6 @@ export const ControlPanel = () => {
     if (device) {
       await connectToDevice(device);
     }
-
   };
 
   const handleSwitch1 = (value) => {
