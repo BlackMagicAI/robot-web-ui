@@ -14,6 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { useWebBluetooth } from '@/hooks/useWebBluetooth';
 
 interface Profile {
   display_name?: string;
@@ -53,7 +54,12 @@ export const UserAccountMenu = () => {
     }
   };
 
+  const { isConnected: isBleConnected, disconnect } = useWebBluetooth();
+
   const handleSignOut = async () => {
+    if (isBleConnected) {
+      await disconnect();
+    }
     const { error } = await signOut();
     if (error) {
       toast({
