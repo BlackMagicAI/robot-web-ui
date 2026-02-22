@@ -71,3 +71,18 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Local Development
+```sh
+# To build the code locally run the following command in the terminal project directory.
+npm run build 
+
+# To run the project locally run the following command in the terminal project directory.
+npm run preview
+
+# Open browser to the following URL to view the project (port my vary. see terminal output for correct port to use).
+http://localhost:4173/
+
+# It may be Necessary to run a device scan in the Chrome browser on a Mac if devices listings do not appear in the device selection dialog. Select start scan to see list of devices and discover services.
+chrome://bluetooth-internals/#devices 
+```

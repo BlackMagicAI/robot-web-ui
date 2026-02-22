@@ -32,7 +32,7 @@ export const ControlPanel = () => {
   const { isConnected: isBleConnected, scanForDevices, connectToDevice } = useWebBluetooth();
   const { guestRole } = useAuth();
 
-  // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and deiscover services
+  // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services
   const handleBleConnect = async () => {
     console.log("handleBleConnect*******");
     let options = {
