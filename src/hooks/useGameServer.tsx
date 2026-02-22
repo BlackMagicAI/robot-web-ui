@@ -79,20 +79,6 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
 
     if (webBluetooth.isConnected && messageValue) {
       
-      //webBluetooth.getCharacteristic("0000DFB1-0000-1000-8000-00805F9B34FB", "0000DFB1-0000-1000-8000-00805F9B34FB")
-      // webBluetooth.writeCharacteristic("0xDFB0", "0xDFB1", encoder.encode(data))
-      // webBluetooth.getCharacteristic("0xDFB0", "0xDFB1")
-      // .then(async characteristic => {
-      //   console.log("characteristic");
-      //   console.log(characteristic);
-      //   // write string
-      //   //await characteristic.writeValue(encoder.encode(data));
-      //   await characteristic.writeValueWithoutResponse(encoder.encode(data))
-      // })
-      // webBluetooth.writeCharacteristic("0000DFB0-0000-1000-8000-00805F9B34FB", "0000DFB0-0000-1000-8000-00805F9B34FB", encoder.encode(data) as BufferSource)
-      //   .then(() => {
-      //     console.log("Value written to LEDcharacteristic:", messageValue);
-      //   })
       webBluetooth.writeCharacteristic("0000dfb0-0000-1000-8000-00805f9b34fb", "0000dfb1-0000-1000-8000-00805f9b34fb", messageValue as BufferSource)
         .then(() => {
           console.log("Value written to LEDcharacteristic:", messageValue);
@@ -107,8 +93,6 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   console.log("Start GameServerProvider");
 
   const connect = async () => {
-    // console.log("+++++++++++:" + userRole);
-    // console.log("+++++++++++:" + guestName);
     if (isGameServerConnecting || isGameServerConnected) return;
 
     setIsGameServerConnected(false);
@@ -292,20 +276,18 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     var sender = event.buddy;
     var message = event.message;
     var customParams = event.data; // SFSObject
-    console.log("Buddy Msg recieved:");
-    console.log(isItMe);
-    console.log(sender);
-    console.log(message);
-    console.log(event);
+    // console.log("Buddy Msg recieved:");
+    // console.log(isItMe);
+    // console.log(sender);
+    // console.log(message);
+    // console.log(event);
     //
-    console.log(customParams.getUtfString("cmd"));
-    console.log(customParams.getInt("targetid"));
-    console.log(customParams.getUtfString("value"));
+    // console.log(customParams.getUtfString("cmd"));
+    // console.log(customParams.getInt("targetid"));
+    // console.log(customParams.getUtfString("value"));
 
     var value = customParams.getUtfString("value");
 
-    // const data = new Uint8Array([value]);
-    // var data = "l0,0\n"
       const encoder = new TextEncoder();
       const data = encoder.encode(value);
      

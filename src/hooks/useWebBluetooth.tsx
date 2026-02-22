@@ -60,7 +60,7 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
         acceptAllDevices: true,
         optionalServices: ['generic_access', 'generic_attribute']
       };
-console.log("Scan$$$$$$$$");
+
       const device = await navigator.bluetooth.requestDevice(options || defaultOptions);
       setIsScanning(false);
       return device as BluetoothDevice;
@@ -134,8 +134,6 @@ console.log("Scan$$$$$$$$");
 
     try {
       const service = await gattServer.getPrimaryService(serviceUuid);
-      console.log("service^^^^^^");
-      console.log(service);
       const characteristic = await service.getCharacteristic(characteristicUuid);
 
       // Cache the characteristic
@@ -154,25 +152,10 @@ console.log("Scan$$$$$$$$");
     value: BufferSource
   ): Promise<boolean> => {
     const characteristic = await getCharacteristic(serviceUuid, characteristicUuid);
-    //const characteristic = await getCharacteristic("0000dfb0-0000-1000-8000-00805f9b34fb", "0000dfb1-0000-1000-8000-00805f9b34fb");
-    console.log("-------------");
-    console.log(characteristic);
+
     if (!characteristic) return false;
     try {
-      // var text = "l0,0\n"
-      // const encoder = new TextEncoder();
-      // const data = encoder.encode(text);
-      // var resp = await characteristic.writeValueWithResponse(data);
-      // console.log(resp);
-      // await characteristic.writeValue(value);
-      // characteristic.writeValueWithResponse(value)
       characteristic.writeValueWithoutResponse(value)
-      .then(() => {
-        console.log("Data written successfully: " + value);
-      })
-      .catch(error => {
-        console.error("Error writing data: " + error);
-      });
       return true;
     } catch (error) {
       setConnectionError(`Failed to write to characteristic: ${error instanceof Error ? error.message : 'Unknown error'}`);

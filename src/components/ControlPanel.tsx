@@ -54,10 +54,10 @@ export const ControlPanel = () => {
     setIsSwitch1(value);
     if (isGameServerConnected && value) {
       console.log("switch1-on");
-      sendBuddyCommand("switch1", "o1,0\n");
+      sendBuddyCommand("switch1", "o1,0\n"); //TODO: make constans
     } else if (value === false) {
       console.log("switch1-off");
-      sendBuddyCommand("switch1", "l1,0\n");
+      sendBuddyCommand("switch1", "o0,0\n");
     }
   }
 
