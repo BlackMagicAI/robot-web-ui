@@ -9,6 +9,8 @@ interface Room {
   "Group Id": string;
 }
 
+export type JsonCmdLookUp = Record<string, string | Record<string, number> | boolean>;
+
 interface GameServerContextType {
   isGameServerConnected: boolean;
   isGameServerConnecting: boolean;
@@ -23,6 +25,8 @@ interface GameServerContextType {
   userList: SFS2X.SFSUser[];
   connectToTargetParticipant: (id: number, name: string) => void;
   sendBuddyCommand: (command: string, data?: any) => void;
+  jsonCmdLookUp: JsonCmdLookUp | null;
+  setJsonCmdLookUp: (value: JsonCmdLookUp | null) => void;
 }
 
 interface Config {
@@ -57,6 +61,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
   const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
   const [messageValue, setMessageValue] = useState<Uint8Array>();
+  const [jsonCmdLookUp, setJsonCmdLookUp] = useState<JsonCmdLookUp | null>(null);
 
   // Set connection parameters
   const config: Config = {
@@ -328,7 +333,9 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     joinRoom,
     userList,
     connectToTargetParticipant,
-    sendBuddyCommand
+    sendBuddyCommand,
+    jsonCmdLookUp,
+    setJsonCmdLookUp
   };
 
   return (
