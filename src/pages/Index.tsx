@@ -6,6 +6,7 @@ import { MessagePanel } from '@/components/MessagePanel';
 import { StatusBar } from '@/components/StatusBar';
 import { RoomSelect, type Room } from '@/components/RoomSelect';
 import { RoomParticipants } from '@/components/RoomParticipants';
+import { useGameServer } from '@/hooks/useGameServer';
 
 interface JoystickData {
   x: number;
@@ -22,8 +23,13 @@ const Index = () => {
   const [selectedRoom, setSelectedRoom] = useState<Room | undefined>();
   const [protocolsData, setProtocolsData] = useState<Record<string, JsonCmdLookUp>>({});
   const [selectedProtocol, setSelectedProtocol] = useState<string>('');
+  const { setJsonCmdLookUp } = useGameServer();
 
   const jsonCmdLookUp: JsonCmdLookUp | null = selectedProtocol ? protocolsData[selectedProtocol] ?? null : null;
+
+  useEffect(() => {
+    setJsonCmdLookUp(jsonCmdLookUp);
+  }, [jsonCmdLookUp, setJsonCmdLookUp]);
 
   useEffect(() => {
     fetch('/jsonprotocols.json')
