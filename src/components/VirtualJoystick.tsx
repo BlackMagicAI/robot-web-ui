@@ -16,6 +16,34 @@ interface VirtualJoystickProps {
   jsonCmdLookUp?: JsonCmdLookUp | null;
 }
 
+/**
+ * Calculates left and right wheel speeds (as percentages, -100 to 100)
+ * for a differential (tank-style) steering vehicle based on joystick input.
+ *
+ * @param angle - Joystick angle in degrees (0-360, 0=right, 90=up, 180=left, 270=down)
+ * @param distance - Joystick distance from center (0 to 1)
+ * @returns {{ left: number; right: number }} Wheel speeds as percentages (-100 to 100)
+ */
+const calculateDifferentialDrive = (angle: number, distance: number): { left: number; right: number } => {
+  if (distance === 0) return { left: 0, right: 0 };
+
+  const rad = angle * (Math.PI / 180);
+  // x = left/right component, y = forward/backward component
+  const x = Math.cos(rad) * distance;
+  const y = Math.sin(rad) * distance;
+
+  // Differential mixing: forward/back ± turn
+  let left = y + x;
+  let right = y - x;
+
+  // Clamp to -1..1 range then scale to percentage
+  const max = Math.max(Math.abs(left), Math.abs(right), 1);
+  left = Math.round((left / max) * distance * 100);
+  right = Math.round((right / max) * distance * 100);
+
+  return { left, right };
+};
+
 export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp }: VirtualJoystickProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [knobPosition, setKnobPosition] = useState({ x: 0, y: 0 });
