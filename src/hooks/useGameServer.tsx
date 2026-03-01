@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import * as SFS2X from "sfs2x-api";
 import { SFSRoom } from 'sfs2x-api';
 import { WebBluetoothContextType } from './useWebBluetooth';
@@ -62,6 +62,12 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
   const [messageValue, setMessageValue] = useState<Uint8Array>();
   const [jsonCmdLookUp, setJsonCmdLookUp] = useState<JsonCmdLookUp | null>(null);
+  const jsonCmdLookUpRef = useRef<JsonCmdLookUp | null>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    jsonCmdLookUpRef.current = jsonCmdLookUp;
+  }, [jsonCmdLookUp]);
 
   // Set connection parameters
   const config: Config = {
@@ -276,27 +282,24 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
    * Buddy message event handler
    */
   const onBuddyMessage = (event) => {
-
     var isItMe = event.isItMe;
     var sender = event.buddy;
     var message = event.message;
     var customParams = event.data; // SFSObject
-    // console.log("Buddy Msg recieved:");
-    // console.log(isItMe);
-    // console.log(sender);
-    // console.log(message);
-    // console.log(event);
-    //
-    // console.log(customParams.getUtfString("cmd"));
-    // console.log(customParams.getInt("targetid"));
-    // console.log(customParams.getUtfString("value"));
 
     var value = customParams.getUtfString("value");
 
-      const encoder = new TextEncoder();
-      const data = encoder.encode(value);
-     
-    // update message data variable to activate write to device charactereistic
+    // Access the current jsonCmdLookUp via ref (avoids stale closure)
+    const currentLookUp = jsonCmdLookUpRef.current;
+    if (currentLookUp) {
+      console.log("onBuddyMessage - jsonCmdLookUp available:", currentLookUp);
+      // You can now use currentLookUp to interpret or transform the command
+    }
+
+    const encoder = new TextEncoder();
+    const data = encoder.encode(value);
+
+    // update message data variable to activate write to device characteristic
     setMessageValue(data);
   }
 
