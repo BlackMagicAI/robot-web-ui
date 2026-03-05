@@ -14,6 +14,7 @@ interface VirtualJoystickProps {
   onMove?: (data: JoystickData) => void;
   size?: number;
   jsonCmdLookUp?: JsonCmdLookUp | null;
+  sendBuddyCommand?: (command: string, data?: any) => void;
 }
 
 /**
@@ -44,7 +45,7 @@ const calculateDifferentialDrive = (angle: number, distance: number): { left: nu
   return { left, right };
 };
 
-export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp }: VirtualJoystickProps) => {
+export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp, sendBuddyCommand }: VirtualJoystickProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [knobPosition, setKnobPosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef<HTMLDivElement>(null);

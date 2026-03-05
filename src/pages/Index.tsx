@@ -23,7 +23,7 @@ const Index = () => {
   const [selectedRoom, setSelectedRoom] = useState<Room | undefined>();
   const [protocolsData, setProtocolsData] = useState<Record<string, JsonCmdLookUp>>({});
   const [selectedProtocol, setSelectedProtocol] = useState<string>('');
-  const { setJsonCmdLookUp } = useGameServer();
+  const { setJsonCmdLookUp, sendBuddyCommand } = useGameServer();
 
   const jsonCmdLookUp: JsonCmdLookUp | null = selectedProtocol ? protocolsData[selectedProtocol] ?? null : null;
 
@@ -71,7 +71,7 @@ const Index = () => {
           <CameraViewer 
             title="Main Camera Feed"
           />
-          <VirtualJoystick onMove={handleJoystickMove} size={180} jsonCmdLookUp={jsonCmdLookUp} />
+          <VirtualJoystick onMove={handleJoystickMove} size={180} jsonCmdLookUp={jsonCmdLookUp} sendBuddyCommand={sendBuddyCommand} />
         </div>
         
         {/* Right Column - Console & Room Management */}
