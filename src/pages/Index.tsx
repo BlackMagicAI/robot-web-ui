@@ -41,6 +41,22 @@ const Index = () => {
   const handleJoystickMove = (data: JoystickData) => {
     setJoystickData(data);
     // In a real application, you would send this data to your robot control API
+    if(data.angle >= 45 && data.angle <= 135 && data.distance > .75){
+      console.log("Forward");
+      sendBuddyCommand("fwd", "forward"); //TODO: make constans
+    } else if(data.angle < 225 && data.angle > 135 && data.distance > .75){
+      console.log("Left");
+      sendBuddyCommand("left", "left"); //TODO: make constans
+    } else if((data.angle < 45 || data.angle > 320) && data.distance > .75){
+      console.log("right");
+      sendBuddyCommand("right", "right"); //TODO: make constans
+    } else if(data.angle >= 225 && data.angle <= 320 && data.distance > .75){
+      console.log("backwards");
+      sendBuddyCommand("backwards", "backwards"); //TODO: make constans
+    } else{
+      console.log("Stop");
+      sendBuddyCommand("stop", "stop"); //TODO: make constans
+    }
     console.log('Joystick moved:', data);
   };
 

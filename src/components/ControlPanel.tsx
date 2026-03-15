@@ -64,10 +64,10 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
     setIsSwitch1(value);
     if (isGameServerConnected && value) {
       console.log("switch1-on");
-      sendBuddyCommand("switch1", jsonCmdLookUp.pin11On); //TODO: make constans
+      sendBuddyCommand("sw1", "sw1On"); //TODO: make constans
     } else if (value === false) {
       console.log("switch1-off");
-      sendBuddyCommand("switch1", jsonCmdLookUp.pin11Off);
+      sendBuddyCommand("sw1", "sw1Off");
     }
   }
 
@@ -75,10 +75,10 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
     setIsSwitch2(value);
     if (isGameServerConnected && value) {
       console.log("switch2-on");
-      sendBuddyCommand("switch2", jsonCmdLookUp.pin13On); //TODO: make constans
+      sendBuddyCommand("sw2", "sw2On"); //TODO: make constans
     } else if (value === false) {
       console.log("switch2-off");
-      sendBuddyCommand("switch2", jsonCmdLookUp.pin13Off);
+      sendBuddyCommand("sw2", "sw2Off");
     }
   }
 

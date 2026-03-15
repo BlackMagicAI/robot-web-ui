@@ -293,15 +293,18 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     const currentLookUp = jsonCmdLookUpRef.current;
     if (currentLookUp) {
       console.log("onBuddyMessage - jsonCmdLookUp available:", currentLookUp);
+      console.log(value);
+      console.log(typeof currentLookUp[value]);
       // You can now use currentLookUp to interpret or transform the command
+      console.log(currentLookUp[value]);
+      const encoder = new TextEncoder();
+      const data = encoder.encode(currentLookUp[value] as string);
+
+        // update message data variable to activate write to device characteristic
+        setMessageValue(data);
+      }
+      
     }
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(value);
-
-    // update message data variable to activate write to device characteristic
-    setMessageValue(data);
-  }
 
   const joinRoom = (roomId: number) => {
     // After the successful login, send the join Room request
