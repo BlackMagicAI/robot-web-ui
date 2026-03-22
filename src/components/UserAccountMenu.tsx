@@ -38,7 +38,7 @@ export const UserAccountMenu = () => {
     
     try {
       const { data, error } = await supabase
-        .from('profiles')
+        .from('profiles' as never)
         .select('display_name, avatar_url')
         .eq('id', user.id)
         .single();
@@ -48,7 +48,7 @@ export const UserAccountMenu = () => {
         return;
       }
       
-      setProfile(data);
+      setProfile(data as Profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
