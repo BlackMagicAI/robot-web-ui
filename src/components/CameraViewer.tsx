@@ -1,75 +1,111 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Video, VideoOff, RotateCw, ZoomIn, ZoomOut } from 'lucide-react';
-import ReactPlayer from 'react-player'
+import { Video, VideoOff, RotateCw, ZoomIn, ZoomOut, Webcam, Radio } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useKinesisWebRTC } from '@/hooks/useKinesisWebRTC';
 
 interface CameraViewerProps {
   title?: string;
 }
 
-export const CameraViewer = ({title = "Robot Camera" }: CameraViewerProps) => {
+type CameraMode = 'robot' | 'webcam';
+
+export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
-  const src = 'http://192.168.1.226:81/stream';//'https://youtu.be/Vy_RPd0rblI?si=ofdeyjginEt6keJp&t=15'; // TODO replace with dynamically update value from server
+  const [cameraMode, setCameraMode] = useState<CameraMode>('robot');
 
-  const initialState = {
-    src: undefined,
-    pip: false,
-    playing: false,
-    controls: false,
-    light: false,
-    volume: 1,
-    muted: false,
-    played: 0,
-    loaded: 0,
-    duration: 0,
-    playbackRate: 1.0,
-    loop: false,
-    seeking: false,
-    loadedSeconds: 0,
-    playedSeconds: 0,
-  };
+  const {
+    isStreaming,
+    error: kinesisError,
+    availableCameras,
+    selectedDeviceId,
+    localVideoRef,
+    enumerateCameras,
+    selectCamera,
+    startStreaming,
+    stopStreaming,
+  } = useKinesisWebRTC();
 
-
-  const [state, setState] = useState(initialState);
+  // Enumerate cameras when switching to webcam mode
+  useEffect(() => {
+    if (cameraMode === 'webcam') {
+      enumerateCameras();
+    }
+  }, [cameraMode, enumerateCameras]);
 
   const handleZoomIn = () => setZoom(prev => Math.min(prev + 0.1, 3));
   const handleZoomOut = () => setZoom(prev => Math.max(prev - 0.1, 0.5));
   const handleResetView = () => setZoom(1);
 
-  const changeSource = () => {
-    setState(prevState => ({ ...prevState, 
-      src: prevState.src == undefined ? src : undefined})); // Update the URL
-  };
-
-  const handlePlay = () => {
-    changeSource();
-    setState(prevState => ({ ...prevState, playing : !prevState.playing}));
+  const handleRobotPlay = () => {
     setIsRecording(!isRecording);
     setIsConnected(!isConnected);
-  };  
+  };
+
+  const handleWebcamToggle = async () => {
+    if (isStreaming) {
+      stopStreaming();
+    } else {
+      await startStreaming(selectedDeviceId || undefined);
+    }
+  };
+
+  const isActive = cameraMode === 'robot' ? isConnected : isStreaming;
 
   return (
     <Card className="p-4 h-fit-content">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <h3 className="font-medium">{title}</h3>
-          <Badge variant={isConnected ? "default" : "secondary"} className="text-xs">
-            {isConnected ? "LIVE" : "OFFLINE"}
+          <Badge variant={isActive ? "default" : "secondary"} className="text-xs">
+            {isActive ? "LIVE" : "OFFLINE"}
           </Badge>
         </div>
         <div className="flex items-center gap-1">
+          {/* Mode toggle */}
           <Button
-            variant="ghost"
+            variant={cameraMode === 'robot' ? 'default' : 'ghost'}
             size="sm"
-            onClick={() => handlePlay()}
-            className={isRecording ? "text-destructive" : ""}
+            onClick={() => { setCameraMode('robot'); if (isStreaming) stopStreaming(); }}
+            title="Robot Camera"
           >
-            {isRecording ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+            <Video className="w-4 h-4" />
           </Button>
+          <Button
+            variant={cameraMode === 'webcam' ? 'default' : 'ghost'}
+            size="sm"
+            onClick={() => { setCameraMode('webcam'); if (isConnected) { setIsConnected(false); setIsRecording(false); } }}
+            title="Webcam to Kinesis"
+          >
+            <Webcam className="w-4 h-4" />
+          </Button>
+
+          <div className="w-px h-5 bg-border mx-1" />
+
+          {cameraMode === 'robot' ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleRobotPlay}
+              className={isRecording ? "text-destructive" : ""}
+            >
+              {isRecording ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+            </Button>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleWebcamToggle}
+              className={isStreaming ? "text-destructive" : ""}
+            >
+              <Radio className="w-4 h-4" />
+            </Button>
+          )}
+
           <Button variant="ghost" size="sm" onClick={handleResetView}>
             <RotateCw className="w-4 h-4" />
           </Button>
@@ -81,64 +117,98 @@ export const CameraViewer = ({title = "Robot Camera" }: CameraViewerProps) => {
           </Button>
         </div>
       </div>
-      <div className="relative bg-muted rounded-lg overflow-hidden aspect-video">
-        {isConnected ? (
-          <div
-            className="w-full h-full bg-gradient-to-br from-background to-muted flex items-center justify-center relative"
-            style={{ transform: `scale(${zoom})` }}
+
+      {/* Webcam camera selector */}
+      {cameraMode === 'webcam' && availableCameras.length > 0 && (
+        <div className="mb-3">
+          <Select
+            value={selectedDeviceId || ''}
+            onValueChange={(val) => selectCamera(val)}
           >
-            {/* Camera feed placeholder - in real app this would be video stream */}
-            <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900">
-              {/* <ReactPlayer
-                slot="media"
-                src={state.src}
-                playing={state.playing}
-                controls={true}
-                style={{
-                  width: "100%",
-                  height: "100%"
-                }}
-              ></ReactPlayer> */}
-              <img id="stream" src="http://192.168.1.226:81/stream"></img>
-              {/* Grid overlay for realistic effect */}
-              {/* <div className="absolute inset-0 opacity-20">
-                <div className="w-full h-full" style={{
-                  backgroundImage: `
-                    linear-gradient(rgba(0,195,255,0.1) 1px, transparent 1px),
-                    linear-gradient(90deg, rgba(0,195,255,0.1) 1px, transparent 1px)
-                  `,
-                  backgroundSize: '20px 20px'
-                }} />
-              </div> */}
+            <SelectTrigger className="w-full text-xs h-8">
+              <SelectValue placeholder="Select webcam..." />
+            </SelectTrigger>
+            <SelectContent>
+              {availableCameras.map((cam) => (
+                <SelectItem key={cam.deviceId} value={cam.deviceId}>
+                  {cam.label || `Camera ${cam.deviceId.slice(0, 8)}`}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
-              {/* Crosshair */}
-              {/* <div className="absolute inset-0 flex items-center justify-center">
-                <div className="relative">
-                  <div className="w-8 h-px bg-primary opacity-60" />
-                  <div className="w-px h-8 bg-primary opacity-60 absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2" />
-                </div>
-              </div> */}
+      {/* Kinesis error */}
+      {kinesisError && cameraMode === 'webcam' && (
+        <div className="mb-3 text-xs text-destructive bg-destructive/10 rounded p-2">
+          {kinesisError}
+        </div>
+      )}
 
-              {/* Status overlay */}
+      <div className="relative bg-muted rounded-lg overflow-hidden aspect-video">
+        {cameraMode === 'webcam' ? (
+          /* Webcam mode */
+          isStreaming ? (
+            <div
+              className="w-full h-full relative"
+              style={{ transform: `scale(${zoom})` }}
+            >
+              <video
+                ref={localVideoRef}
+                autoPlay
+                playsInline
+                muted
+                className="w-full h-full object-cover"
+              />
               <div className="absolute top-2 left-2 text-xs text-primary font-mono">
-                {isRecording && <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
-                  Streaming
-                </div>}
+                  Streaming to Kinesis
+                </div>
               </div>
-
               <div className="absolute bottom-2 right-2 text-xs text-muted-foreground font-mono">
                 ZOOM: {zoom.toFixed(1)}x
               </div>
             </div>
-          </div>
-        ) : (
-          <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-            <div className="text-center">
-              <VideoOff className="w-12 h-12 mx-auto mb-2 opacity-50" />
-              <p className="text-sm">Camera Offline</p>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Webcam className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Select a camera and click stream</p>
+              </div>
             </div>
-          </div>
+          )
+        ) : (
+          /* Robot camera mode */
+          isConnected ? (
+            <div
+              className="w-full h-full bg-gradient-to-br from-background to-muted flex items-center justify-center relative"
+              style={{ transform: `scale(${zoom})` }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900">
+                <img id="stream" src="http://192.168.1.226:81/stream" className="w-full h-full object-cover" />
+                <div className="absolute top-2 left-2 text-xs text-primary font-mono">
+                  {isRecording && (
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
+                      Streaming
+                    </div>
+                  )}
+                </div>
+                <div className="absolute bottom-2 right-2 text-xs text-muted-foreground font-mono">
+                  ZOOM: {zoom.toFixed(1)}x
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <VideoOff className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Camera Offline</p>
+              </div>
+            </div>
+          )
         )}
       </div>
     </Card>

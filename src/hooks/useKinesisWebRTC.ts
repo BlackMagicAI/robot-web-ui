@@ -151,11 +151,14 @@ export const useKinesisWebRTC = () => {
       signalingClientRef.current = signalingClient;
 
       // 7. Set up signaling client event handlers
-      signalingClient.on('open', () => {
+      // Cast to any because the EventEmitter types from the SDK don't resolve cleanly in browser TS
+      const client = signalingClient as any;
+
+      client.on('open', () => {
         console.log('[KVS] Signaling client connected');
       });
 
-      signalingClient.on('sdpOffer', async (offer: RTCSessionDescriptionInit, remoteClientId: string) => {
+      client.on('sdpOffer', async (offer: RTCSessionDescriptionInit, remoteClientId: string) => {
         console.log('[KVS] Received SDP offer from:', remoteClientId);
 
         // Create peer connection for this viewer
@@ -182,18 +185,18 @@ export const useKinesisWebRTC = () => {
         signalingClient.sendSdpAnswer(peerConnection.localDescription!, remoteClientId);
       });
 
-      signalingClient.on('iceCandidate', async (candidate: RTCIceCandidate, remoteClientId: string) => {
+      client.on('iceCandidate', async (candidate: RTCIceCandidate, remoteClientId: string) => {
         console.log('[KVS] Received ICE candidate from:', remoteClientId);
         if (peerConnectionRef.current) {
           await peerConnectionRef.current.addIceCandidate(candidate);
         }
       });
 
-      signalingClient.on('close', () => {
+      client.on('close', () => {
         console.log('[KVS] Signaling client disconnected');
       });
 
-      signalingClient.on('error', (error: Error) => {
+      client.on('error', (error: Error) => {
         console.error('[KVS] Signaling client error:', error);
         setState((prev) => ({ ...prev, error: error.message }));
       });
