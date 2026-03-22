@@ -37,11 +37,11 @@ export const UserAccountMenu = () => {
     if (!user) return;
     
     try {
-      const { data, error } = await (supabase
-        .from('profiles' as any)
+      const { data, error } = await supabase
+        .from('profiles' as never)
         .select('display_name, avatar_url')
         .eq('id', user.id)
-        .single());
+        .single();
       
       if (error) {
         console.error('Error fetching profile:', error);
