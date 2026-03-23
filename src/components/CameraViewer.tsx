@@ -22,6 +22,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const [deviceRole, setDeviceRole] = useState<DeviceRole>('robot');
   const [cameraMode, setCameraMode] = useState<CameraMode>('robot');
 
+  const {
     isStreaming,
     isViewing,
     error: kinesisError,
