@@ -139,7 +139,7 @@ export const useKinesisWebRTC = () => {
 
       // 6. Create signaling client as MASTER
       const signalingClient = new SignalingClient({
-        channelARN,
+        channelARN: channelARN,
         channelEndpoint: endpointsByProtocol.WSS,
         role: Role.MASTER,
         region: KVS_CONFIG.region,
