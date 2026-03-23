@@ -10,6 +10,7 @@ interface CameraViewerProps {
   title?: string;
 }
 
+type DeviceRole = 'robot' | 'consumer';
 type CameraMode = 'robot' | 'webcam' | 'viewer';
 
 export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
