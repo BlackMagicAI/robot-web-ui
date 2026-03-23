@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
 import {
   KinesisVideoClient,
