@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Video, VideoOff, RotateCw, ZoomIn, ZoomOut, Webcam, Radio } from 'lucide-react';
+import { Video, VideoOff, RotateCw, ZoomIn, ZoomOut, Webcam, Radio, Eye } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useKinesisWebRTC } from '@/hooks/useKinesisWebRTC';
 
@@ -10,7 +10,7 @@ interface CameraViewerProps {
   title?: string;
 }
 
-type CameraMode = 'robot' | 'webcam';
+type CameraMode = 'robot' | 'webcam' | 'viewer';
 
 export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const [isRecording, setIsRecording] = useState(false);
@@ -20,17 +20,20 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
 
   const {
     isStreaming,
+    isViewing,
     error: kinesisError,
     availableCameras,
     selectedDeviceId,
     localVideoRef,
+    remoteVideoRef,
     enumerateCameras,
     selectCamera,
     startStreaming,
     stopStreaming,
+    startViewing,
+    stopViewing,
   } = useKinesisWebRTC();
 
-  // Enumerate cameras when switching to webcam mode
   useEffect(() => {
     if (cameraMode === 'webcam') {
       enumerateCameras();
@@ -54,7 +57,23 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
     }
   };
 
-  const isActive = cameraMode === 'robot' ? isConnected : isStreaming;
+  const handleViewerToggle = async () => {
+    if (isViewing) {
+      stopViewing();
+    } else {
+      await startViewing();
+    }
+  };
+
+  const switchMode = (mode: CameraMode) => {
+    // Clean up previous mode
+    if (isStreaming) stopStreaming();
+    if (isViewing) stopViewing();
+    if (isConnected) { setIsConnected(false); setIsRecording(false); }
+    setCameraMode(mode);
+  };
+
+  const isActive = cameraMode === 'robot' ? isConnected : cameraMode === 'webcam' ? isStreaming : isViewing;
 
   return (
     <Card className="p-4 h-fit-content">
@@ -66,43 +85,33 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          {/* Mode toggle */}
-          <Button
-            variant={cameraMode === 'robot' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => { setCameraMode('robot'); if (isStreaming) stopStreaming(); }}
-            title="Robot Camera"
-          >
+          {/* Mode toggles */}
+          <Button variant={cameraMode === 'robot' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('robot')} title="Robot Camera">
             <Video className="w-4 h-4" />
           </Button>
-          <Button
-            variant={cameraMode === 'webcam' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => { setCameraMode('webcam'); if (isConnected) { setIsConnected(false); setIsRecording(false); } }}
-            title="Webcam to Kinesis"
-          >
+          <Button variant={cameraMode === 'webcam' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('webcam')} title="Webcam to Kinesis">
             <Webcam className="w-4 h-4" />
+          </Button>
+          <Button variant={cameraMode === 'viewer' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('viewer')} title="KVS Viewer">
+            <Eye className="w-4 h-4" />
           </Button>
 
           <div className="w-px h-5 bg-border mx-1" />
 
-          {cameraMode === 'robot' ? (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleRobotPlay}
-              className={isRecording ? "text-destructive" : ""}
-            >
+          {/* Action button per mode */}
+          {cameraMode === 'robot' && (
+            <Button variant="ghost" size="sm" onClick={handleRobotPlay} className={isRecording ? "text-destructive" : ""}>
               {isRecording ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
             </Button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleWebcamToggle}
-              className={isStreaming ? "text-destructive" : ""}
-            >
+          )}
+          {cameraMode === 'webcam' && (
+            <Button variant="ghost" size="sm" onClick={handleWebcamToggle} className={isStreaming ? "text-destructive" : ""}>
               <Radio className="w-4 h-4" />
+            </Button>
+          )}
+          {cameraMode === 'viewer' && (
+            <Button variant="ghost" size="sm" onClick={handleViewerToggle} className={isViewing ? "text-destructive" : ""}>
+              <Eye className="w-4 h-4" />
             </Button>
           )}
 
@@ -121,10 +130,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
       {/* Webcam camera selector */}
       {cameraMode === 'webcam' && availableCameras.length > 0 && (
         <div className="mb-3">
-          <Select
-            value={selectedDeviceId || ''}
-            onValueChange={(val) => selectCamera(val)}
-          >
+          <Select value={selectedDeviceId || ''} onValueChange={(val) => selectCamera(val)}>
             <SelectTrigger className="w-full text-xs h-8">
               <SelectValue placeholder="Select webcam..." />
             </SelectTrigger>
@@ -140,27 +146,46 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
       )}
 
       {/* Kinesis error */}
-      {kinesisError && cameraMode === 'webcam' && (
+      {kinesisError && (cameraMode === 'webcam' || cameraMode === 'viewer') && (
         <div className="mb-3 text-xs text-destructive bg-destructive/10 rounded p-2">
           {kinesisError}
         </div>
       )}
 
       <div className="relative bg-muted rounded-lg overflow-hidden aspect-video">
-        {cameraMode === 'webcam' ? (
-          /* Webcam mode */
-          isStreaming ? (
-            <div
-              className="w-full h-full relative"
-              style={{ transform: `scale(${zoom})` }}
-            >
+        {/* ─── Viewer mode ─── */}
+        {cameraMode === 'viewer' ? (
+          isViewing ? (
+            <div className="w-full h-full relative" style={{ transform: `scale(${zoom})` }}>
               <video
-                ref={localVideoRef}
+                ref={remoteVideoRef}
                 autoPlay
                 playsInline
-                muted
                 className="w-full h-full object-cover"
               />
+              <div className="absolute top-2 left-2 text-xs text-primary font-mono">
+                <div className="flex items-center gap-1">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  Viewing KVS Stream
+                </div>
+              </div>
+              <div className="absolute bottom-2 right-2 text-xs text-muted-foreground font-mono">
+                ZOOM: {zoom.toFixed(1)}x
+              </div>
+            </div>
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+              <div className="text-center">
+                <Eye className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">Click the eye icon to connect as viewer</p>
+              </div>
+            </div>
+          )
+        ) : cameraMode === 'webcam' ? (
+          /* ─── Webcam mode ─── */
+          isStreaming ? (
+            <div className="w-full h-full relative" style={{ transform: `scale(${zoom})` }}>
+              <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
               <div className="absolute top-2 left-2 text-xs text-primary font-mono">
                 <div className="flex items-center gap-1">
                   <div className="w-2 h-2 bg-destructive rounded-full animate-pulse" />
@@ -180,12 +205,9 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
             </div>
           )
         ) : (
-          /* Robot camera mode */
+          /* ─── Robot camera mode ─── */
           isConnected ? (
-            <div
-              className="w-full h-full bg-gradient-to-br from-background to-muted flex items-center justify-center relative"
-              style={{ transform: `scale(${zoom})` }}
-            >
+            <div className="w-full h-full bg-gradient-to-br from-background to-muted flex items-center justify-center relative" style={{ transform: `scale(${zoom})` }}>
               <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900">
                 <img id="stream" src="http://192.168.1.226:81/stream" className="w-full h-full object-cover" />
                 <div className="absolute top-2 left-2 text-xs text-primary font-mono">
