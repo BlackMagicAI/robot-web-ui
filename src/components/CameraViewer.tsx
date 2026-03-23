@@ -98,34 +98,49 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
           </Badge>
         </div>
         <div className="flex items-center gap-1">
-          {/* Mode toggles */}
-          <Button variant={cameraMode === 'robot' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('robot')} title="Robot Camera">
-            <Video className="w-4 h-4" />
-          </Button>
-          <Button variant={cameraMode === 'webcam' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('webcam')} title="Webcam to Kinesis">
-            <Webcam className="w-4 h-4" />
-          </Button>
-          <Button variant={cameraMode === 'viewer' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('viewer')} title="KVS Viewer">
-            <Eye className="w-4 h-4" />
-          </Button>
+          {/* Role toggle */}
+          <div className="flex items-center gap-1.5 mr-2">
+            <Bot className="w-3.5 h-3.5 text-muted-foreground" />
+            <Switch
+              checked={deviceRole === 'consumer'}
+              onCheckedChange={handleRoleToggle}
+              className="scale-75"
+            />
+            <Monitor className="w-3.5 h-3.5 text-muted-foreground" />
+          </div>
 
           <div className="w-px h-5 bg-border mx-1" />
 
-          {/* Action button per mode */}
-          {cameraMode === 'robot' && (
-            <Button variant="ghost" size="sm" onClick={handleRobotPlay} className={isRecording ? "text-destructive" : ""}>
-              {isRecording ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
-            </Button>
+          {/* Robot role: robot camera + webcam master modes */}
+          {deviceRole === 'robot' && (
+            <>
+              <Button variant={cameraMode === 'robot' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('robot')} title="Robot Camera">
+                <Video className="w-4 h-4" />
+              </Button>
+              <Button variant={cameraMode === 'webcam' ? 'default' : 'ghost'} size="sm" onClick={() => switchMode('webcam')} title="Webcam to Kinesis">
+                <Webcam className="w-4 h-4" />
+              </Button>
+              <div className="w-px h-5 bg-border mx-1" />
+              {cameraMode === 'robot' && (
+                <Button variant="ghost" size="sm" onClick={handleRobotPlay} className={isRecording ? "text-destructive" : ""}>
+                  {isRecording ? <VideoOff className="w-4 h-4" /> : <Video className="w-4 h-4" />}
+                </Button>
+              )}
+              {cameraMode === 'webcam' && (
+                <Button variant="ghost" size="sm" onClick={handleWebcamToggle} className={isStreaming ? "text-destructive" : ""}>
+                  <Radio className="w-4 h-4" />
+                </Button>
+              )}
+            </>
           )}
-          {cameraMode === 'webcam' && (
-            <Button variant="ghost" size="sm" onClick={handleWebcamToggle} className={isStreaming ? "text-destructive" : ""}>
-              <Radio className="w-4 h-4" />
-            </Button>
-          )}
-          {cameraMode === 'viewer' && (
-            <Button variant="ghost" size="sm" onClick={handleViewerToggle} className={isViewing ? "text-destructive" : ""}>
-              <Eye className="w-4 h-4" />
-            </Button>
+
+          {/* Consumer role: viewer mode */}
+          {deviceRole === 'consumer' && (
+            <>
+              <Button variant="ghost" size="sm" onClick={handleViewerToggle} className={isViewing ? "text-destructive" : ""}>
+                <Eye className="w-4 h-4" />
+              </Button>
+            </>
           )}
 
           <Button variant="ghost" size="sm" onClick={handleResetView}>
