@@ -70,11 +70,20 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   };
 
   const switchMode = (mode: CameraMode) => {
-    // Clean up previous mode
     if (isStreaming) stopStreaming();
     if (isViewing) stopViewing();
     if (isConnected) { setIsConnected(false); setIsRecording(false); }
     setCameraMode(mode);
+  };
+
+  const handleRoleToggle = (checked: boolean) => {
+    const newRole: DeviceRole = checked ? 'consumer' : 'robot';
+    // Clean up everything when switching roles
+    if (isStreaming) stopStreaming();
+    if (isViewing) stopViewing();
+    if (isConnected) { setIsConnected(false); setIsRecording(false); }
+    setDeviceRole(newRole);
+    setCameraMode(newRole === 'robot' ? 'robot' : 'viewer');
   };
 
   const isActive = cameraMode === 'robot' ? isConnected : cameraMode === 'webcam' ? isStreaming : isViewing;
