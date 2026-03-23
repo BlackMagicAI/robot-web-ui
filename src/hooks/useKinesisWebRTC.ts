@@ -38,6 +38,13 @@ export const useKinesisWebRTC = () => {
   const localStreamRef = useRef<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
 
+  // Sync local stream to video element whenever it mounts
+  useEffect(() => {
+    if (localVideoRef.current && localStreamRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
+  });
+
   const enumerateCameras = useCallback(async () => {
     try {
       // Request permission first so labels are populated
