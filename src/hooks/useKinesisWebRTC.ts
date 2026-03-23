@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
 import {
   KinesisVideoClient,
@@ -37,6 +37,13 @@ export const useKinesisWebRTC = () => {
   const peerConnectionRef = useRef<RTCPeerConnection | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
+
+  // Sync local stream to video element whenever it mounts
+  useEffect(() => {
+    if (localVideoRef.current && localStreamRef.current) {
+      localVideoRef.current.srcObject = localStreamRef.current;
+    }
+  });
 
   const enumerateCameras = useCallback(async () => {
     try {
