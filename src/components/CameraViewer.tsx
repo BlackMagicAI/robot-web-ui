@@ -93,14 +93,14 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
 
   return (
     <Card className="p-4 h-fit-content">
-      <div className="flex items-center justify-between mb-4">
+      <div className="mb-4 space-y-2">
         <div className="flex items-center gap-2">
           <h3 className="font-medium">{title}</h3>
           <Badge variant={isActive ? "default" : "secondary"} className="text-xs">
             {isActive ? "LIVE" : "OFFLINE"}
           </Badge>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 flex-wrap">
           {/* Role toggle */}
           <div className="flex items-center gap-1.5 mr-2">
             <Bot className="w-3.5 h-3.5 text-muted-foreground" />
@@ -139,11 +139,9 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
 
           {/* Consumer role: viewer mode */}
           {deviceRole === 'consumer' && (
-            <>
-              <Button variant="ghost" size="sm" onClick={handleViewerToggle} className={isViewing ? "text-destructive" : ""}>
-                <Eye className="w-4 h-4" />
-              </Button>
-            </>
+            <Button variant="ghost" size="sm" onClick={handleViewerToggle} className={isViewing ? "text-destructive" : ""}>
+              <Eye className="w-4 h-4" />
+            </Button>
           )}
 
           <Button variant="ghost" size="sm" onClick={handleResetView}>
