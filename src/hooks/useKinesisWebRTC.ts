@@ -10,13 +10,12 @@ import {
   GetIceServerConfigCommand,
 } from '@aws-sdk/client-kinesis-video-signaling';
 
-// Hardcoded config for development — replace with dynamic values later
-const KVS_CONFIG = {
-  region: 'us-east-1',
-  accessKeyId: 'YOUR_ACCESS_KEY_ID',
-  secretAccessKey: 'YOUR_SECRET_ACCESS_KEY',
-  channelName: 'YOUR_CHANNEL_NAME',
-};
+export interface KvsConfig {
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  channelName: string;
+}
 
 interface KinesisState {
   isStreaming: boolean;
@@ -26,7 +25,7 @@ interface KinesisState {
   availableCameras: MediaDeviceInfo[];
 }
 
-export const useKinesisWebRTC = () => {
+export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   const [state, setState] = useState<KinesisState>({
     isStreaming: false,
     isViewing: false,
