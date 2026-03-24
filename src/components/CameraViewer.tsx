@@ -155,6 +155,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
           <Button variant="ghost" size="sm" onClick={handleZoomIn}>
             <ZoomIn className="w-4 h-4" />
           </Button>
+          <KvsConfigForm config={kvsConfig} onChange={setKvsConfig} />
         </div>
       </div>
 
