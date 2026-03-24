@@ -10,13 +10,12 @@ import {
   GetIceServerConfigCommand,
 } from '@aws-sdk/client-kinesis-video-signaling';
 
-// Hardcoded config for development — replace with dynamic values later
-const KVS_CONFIG = {
-  region: 'us-east-1',
-  accessKeyId: 'YOUR_ACCESS_KEY_ID',
-  secretAccessKey: 'YOUR_SECRET_ACCESS_KEY',
-  channelName: 'YOUR_CHANNEL_NAME',
-};
+export interface KvsConfig {
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
+  channelName: string;
+}
 
 interface KinesisState {
   isStreaming: boolean;
@@ -26,7 +25,7 @@ interface KinesisState {
   availableCameras: MediaDeviceInfo[];
 }
 
-export const useKinesisWebRTC = () => {
+export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   const [state, setState] = useState<KinesisState>({
     isStreaming: false,
     isViewing: false,
@@ -79,15 +78,15 @@ export const useKinesisWebRTC = () => {
   /** Helper: get channel ARN, endpoints, and ICE servers */
   const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER') => {
     const kinesisVideoClient = new KinesisVideoClient({
-      region: KVS_CONFIG.region,
+      region: kvsConfig.region,
       credentials: {
-        accessKeyId: KVS_CONFIG.accessKeyId,
-        secretAccessKey: KVS_CONFIG.secretAccessKey,
+        accessKeyId: kvsConfig.accessKeyId,
+        secretAccessKey: kvsConfig.secretAccessKey,
       },
     });
 
     const describeResponse = await kinesisVideoClient.send(
-      new DescribeSignalingChannelCommand({ ChannelName: KVS_CONFIG.channelName })
+      new DescribeSignalingChannelCommand({ ChannelName: kvsConfig.channelName })
     );
     const channelARN = describeResponse.ChannelInfo?.ChannelARN;
     if (!channelARN) throw new Error('Channel ARN not found');
@@ -110,10 +109,10 @@ export const useKinesisWebRTC = () => {
     }
 
     const kinesisVideoSignalingClient = new KinesisVideoSignalingClient({
-      region: KVS_CONFIG.region,
+      region: kvsConfig.region,
       credentials: {
-        accessKeyId: KVS_CONFIG.accessKeyId,
-        secretAccessKey: KVS_CONFIG.secretAccessKey,
+        accessKeyId: kvsConfig.accessKeyId,
+        secretAccessKey: kvsConfig.secretAccessKey,
       },
       endpoint: endpointsByProtocol.HTTPS,
     });
@@ -123,7 +122,7 @@ export const useKinesisWebRTC = () => {
     );
 
     const iceServers: RTCIceServer[] = [
-      { urls: `stun:stun.kinesisvideo.${KVS_CONFIG.region}.amazonaws.com:443` },
+      { urls: `stun:stun.kinesisvideo.${kvsConfig.region}.amazonaws.com:443` },
     ];
     for (const iceServer of iceServerResponse.IceServerList || []) {
       iceServers.push({
@@ -162,10 +161,10 @@ export const useKinesisWebRTC = () => {
         channelARN,
         channelEndpoint: endpointsByProtocol.WSS,
         role: Role.MASTER,
-        region: KVS_CONFIG.region,
+        region: kvsConfig.region,
         credentials: {
-          accessKeyId: KVS_CONFIG.accessKeyId,
-          secretAccessKey: KVS_CONFIG.secretAccessKey,
+          accessKeyId: kvsConfig.accessKeyId,
+          secretAccessKey: kvsConfig.secretAccessKey,
         },
       });
       signalingClientRef.current = signalingClient;
@@ -251,10 +250,10 @@ export const useKinesisWebRTC = () => {
         channelEndpoint: endpointsByProtocol.WSS,
         role: Role.VIEWER,
         clientId,
-        region: KVS_CONFIG.region,
+        region: kvsConfig.region,
         credentials: {
-          accessKeyId: KVS_CONFIG.accessKeyId,
-          secretAccessKey: KVS_CONFIG.secretAccessKey,
+          accessKeyId: kvsConfig.accessKeyId,
+          secretAccessKey: kvsConfig.secretAccessKey,
         },
       });
       viewerSignalingClientRef.current = signalingClient;

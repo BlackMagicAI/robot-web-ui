@@ -7,6 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useKinesisWebRTC } from '@/hooks/useKinesisWebRTC';
+import { KvsConfigForm, loadConfig } from '@/components/KvsConfigForm';
+import type { KvsConfig } from '@/hooks/useKinesisWebRTC';
 
 interface CameraViewerProps {
   title?: string;
@@ -21,6 +23,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [deviceRole, setDeviceRole] = useState<DeviceRole>('robot');
   const [cameraMode, setCameraMode] = useState<CameraMode>('robot');
+  const [kvsConfig, setKvsConfig] = useState<KvsConfig>(loadConfig);
 
   const {
     isStreaming,
@@ -36,7 +39,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
     stopStreaming,
     startViewing,
     stopViewing,
-  } = useKinesisWebRTC();
+  } = useKinesisWebRTC(kvsConfig);
 
   useEffect(() => {
     if (cameraMode === 'webcam') {
@@ -152,6 +155,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
           <Button variant="ghost" size="sm" onClick={handleZoomIn}>
             <ZoomIn className="w-4 h-4" />
           </Button>
+          <KvsConfigForm config={kvsConfig} onChange={setKvsConfig} />
         </div>
       </div>
 
