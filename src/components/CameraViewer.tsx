@@ -23,6 +23,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const [isConnected, setIsConnected] = useState(false);
   const [deviceRole, setDeviceRole] = useState<DeviceRole>('robot');
   const [cameraMode, setCameraMode] = useState<CameraMode>('robot');
+  const [kvsConfig, setKvsConfig] = useState<KvsConfig>(loadConfig);
 
   const {
     isStreaming,
