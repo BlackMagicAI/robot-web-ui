@@ -158,7 +158,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
       const { channelARN, endpointsByProtocol, iceServers } = await getKvsInfrastructure('MASTER');
 
       const signalingClient = new SignalingClient({
-        channelARN,
+        channelARN: channelARN,
         channelEndpoint: endpointsByProtocol.WSS,
         role: Role.MASTER,
         region: kvsConfig.region,
