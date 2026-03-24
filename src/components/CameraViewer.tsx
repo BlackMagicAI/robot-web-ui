@@ -39,7 +39,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
     stopStreaming,
     startViewing,
     stopViewing,
-  } = useKinesisWebRTC();
+  } = useKinesisWebRTC(kvsConfig);
 
   useEffect(() => {
     if (cameraMode === 'webcam') {
