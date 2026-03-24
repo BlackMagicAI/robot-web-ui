@@ -7,6 +7,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useKinesisWebRTC } from '@/hooks/useKinesisWebRTC';
+import { KvsConfigForm, loadConfig } from '@/components/KvsConfigForm';
+import type { KvsConfig } from '@/hooks/useKinesisWebRTC';
 
 interface CameraViewerProps {
   title?: string;
