@@ -64,6 +64,7 @@ This project is built with:
 ## How can I deploy this project?
 
 Simply open [Lovable](https://lovable.dev/projects/64a3ac55-1b29-4fb7-b3bb-b44243be6924) and click on Share -> Publish.
+App URL: netdroid.lovable.app
 
 ## Can I connect a custom domain to my Lovable project?
 
