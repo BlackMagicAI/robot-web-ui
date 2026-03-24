@@ -78,15 +78,15 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   /** Helper: get channel ARN, endpoints, and ICE servers */
   const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER') => {
     const kinesisVideoClient = new KinesisVideoClient({
-      region: KVS_CONFIG.region,
+      region: kvsConfig.region,
       credentials: {
-        accessKeyId: KVS_CONFIG.accessKeyId,
-        secretAccessKey: KVS_CONFIG.secretAccessKey,
+        accessKeyId: kvsConfig.accessKeyId,
+        secretAccessKey: kvsConfig.secretAccessKey,
       },
     });
 
     const describeResponse = await kinesisVideoClient.send(
-      new DescribeSignalingChannelCommand({ ChannelName: KVS_CONFIG.channelName })
+      new DescribeSignalingChannelCommand({ ChannelName: kvsConfig.channelName })
     );
     const channelARN = describeResponse.ChannelInfo?.ChannelARN;
     if (!channelARN) throw new Error('Channel ARN not found');
@@ -109,10 +109,10 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     }
 
     const kinesisVideoSignalingClient = new KinesisVideoSignalingClient({
-      region: KVS_CONFIG.region,
+      region: kvsConfig.region,
       credentials: {
-        accessKeyId: KVS_CONFIG.accessKeyId,
-        secretAccessKey: KVS_CONFIG.secretAccessKey,
+        accessKeyId: kvsConfig.accessKeyId,
+        secretAccessKey: kvsConfig.secretAccessKey,
       },
       endpoint: endpointsByProtocol.HTTPS,
     });
@@ -122,7 +122,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     );
 
     const iceServers: RTCIceServer[] = [
-      { urls: `stun:stun.kinesisvideo.${KVS_CONFIG.region}.amazonaws.com:443` },
+      { urls: `stun:stun.kinesisvideo.${kvsConfig.region}.amazonaws.com:443` },
     ];
     for (const iceServer of iceServerResponse.IceServerList || []) {
       iceServers.push({
@@ -161,10 +161,10 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
         channelARN,
         channelEndpoint: endpointsByProtocol.WSS,
         role: Role.MASTER,
-        region: KVS_CONFIG.region,
+        region: kvsConfig.region,
         credentials: {
-          accessKeyId: KVS_CONFIG.accessKeyId,
-          secretAccessKey: KVS_CONFIG.secretAccessKey,
+          accessKeyId: kvsConfig.accessKeyId,
+          secretAccessKey: kvsConfig.secretAccessKey,
         },
       });
       signalingClientRef.current = signalingClient;
@@ -250,10 +250,10 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
         channelEndpoint: endpointsByProtocol.WSS,
         role: Role.VIEWER,
         clientId,
-        region: KVS_CONFIG.region,
+        region: kvsConfig.region,
         credentials: {
-          accessKeyId: KVS_CONFIG.accessKeyId,
-          secretAccessKey: KVS_CONFIG.secretAccessKey,
+          accessKeyId: kvsConfig.accessKeyId,
+          secretAccessKey: kvsConfig.secretAccessKey,
         },
       });
       viewerSignalingClientRef.current = signalingClient;
