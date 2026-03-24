@@ -1,20 +1,20 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
-import {
-  KinesisVideoClient,
-  GetSignalingChannelEndpointCommand,
-  DescribeSignalingChannelCommand,
-} from '@aws-sdk/client-kinesis-video';
-import {
-  KinesisVideoSignalingClient,
-  GetIceServerConfigCommand,
-} from '@aws-sdk/client-kinesis-video-signaling';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface KvsConfig {
-  region: string;
-  accessKeyId: string;
-  secretAccessKey: string;
   channelName: string;
+}
+
+interface KvsInfrastructure {
+  channelARN: string;
+  endpointsByProtocol: Record<string, string>;
+  iceServers: RTCIceServer[];
+  region: string;
+  credentials: {
+    accessKeyId: string;
+    secretAccessKey: string;
+  };
 }
 
 interface KinesisState {
@@ -43,14 +43,12 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Sync local stream to video element whenever it mounts
   useEffect(() => {
     if (localVideoRef.current && localStreamRef.current) {
       localVideoRef.current.srcObject = localStreamRef.current;
     }
   });
 
-  // Sync remote stream to video element whenever it mounts
   useEffect(() => {
     if (remoteVideoRef.current && remoteStreamRef.current) {
       remoteVideoRef.current.srcObject = remoteStreamRef.current;
@@ -75,65 +73,18 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     setState((prev) => ({ ...prev, selectedDeviceId: deviceId }));
   }, []);
 
-  /** Helper: get channel ARN, endpoints, and ICE servers */
-  const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER') => {
-    const kinesisVideoClient = new KinesisVideoClient({
-      region: kvsConfig.region,
-      credentials: {
-        accessKeyId: kvsConfig.accessKeyId,
-        secretAccessKey: kvsConfig.secretAccessKey,
-      },
+  /** Call Edge Function to get KVS infrastructure (no AWS creds on client) */
+  const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER'): Promise<KvsInfrastructure> => {
+    const { data, error } = await supabase.functions.invoke('kvs-credentials', {
+      body: { channelName: kvsConfig.channelName, role },
     });
 
-    const describeResponse = await kinesisVideoClient.send(
-      new DescribeSignalingChannelCommand({ ChannelName: kvsConfig.channelName })
-    );
-    const channelARN = describeResponse.ChannelInfo?.ChannelARN;
-    if (!channelARN) throw new Error('Channel ARN not found');
-
-    const endpointResponse = await kinesisVideoClient.send(
-      new GetSignalingChannelEndpointCommand({
-        ChannelARN: channelARN,
-        SingleMasterChannelEndpointConfiguration: {
-          Protocols: ['WSS', 'HTTPS'],
-          Role: role,
-        },
-      })
-    );
-
-    const endpointsByProtocol: Record<string, string> = {};
-    for (const ep of endpointResponse.ResourceEndpointList || []) {
-      if (ep.Protocol && ep.ResourceEndpoint) {
-        endpointsByProtocol[ep.Protocol] = ep.ResourceEndpoint;
-      }
+    if (error) {
+      throw new Error(`Failed to get KVS credentials: ${error.message}`);
     }
 
-    const kinesisVideoSignalingClient = new KinesisVideoSignalingClient({
-      region: kvsConfig.region,
-      credentials: {
-        accessKeyId: kvsConfig.accessKeyId,
-        secretAccessKey: kvsConfig.secretAccessKey,
-      },
-      endpoint: endpointsByProtocol.HTTPS,
-    });
-
-    const iceServerResponse = await kinesisVideoSignalingClient.send(
-      new GetIceServerConfigCommand({ ChannelARN: channelARN })
-    );
-
-    const iceServers: RTCIceServer[] = [
-      { urls: `stun:stun.kinesisvideo.${kvsConfig.region}.amazonaws.com:443` },
-    ];
-    for (const iceServer of iceServerResponse.IceServerList || []) {
-      iceServers.push({
-        urls: iceServer.Uris || [],
-        username: iceServer.Username,
-        credential: iceServer.Password,
-      });
-    }
-
-    return { channelARN, endpointsByProtocol, iceServers };
-  }, []);
+    return data as KvsInfrastructure;
+  }, [kvsConfig.channelName]);
 
   // ─── MASTER: stream local webcam ───────────────────────────────────
 
@@ -155,16 +106,16 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
         localVideoRef.current.srcObject = localStream;
       }
 
-      const { channelARN, endpointsByProtocol, iceServers } = await getKvsInfrastructure('MASTER');
+      const infra = await getKvsInfrastructure('MASTER');
 
       const signalingClient = new SignalingClient({
-        channelARN: channelARN,
-        channelEndpoint: endpointsByProtocol.WSS,
+        channelARN: infra.channelARN,
+        channelEndpoint: infra.endpointsByProtocol.WSS,
         role: Role.MASTER,
-        region: kvsConfig.region,
+        region: infra.region,
         credentials: {
-          accessKeyId: kvsConfig.accessKeyId,
-          secretAccessKey: kvsConfig.secretAccessKey,
+          accessKeyId: infra.credentials.accessKeyId,
+          secretAccessKey: infra.credentials.secretAccessKey,
         },
       });
       signalingClientRef.current = signalingClient;
@@ -177,7 +128,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
       client.on('sdpOffer', async (offer: RTCSessionDescriptionInit, remoteClientId: string) => {
         console.log('[KVS Master] Received SDP offer from:', remoteClientId);
-        const peerConnection = new RTCPeerConnection({ iceServers });
+        const peerConnection = new RTCPeerConnection({ iceServers: infra.iceServers });
         peerConnectionRef.current = peerConnection;
 
         localStream.getTracks().forEach((track) => {
@@ -241,24 +192,24 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     try {
       setState((prev) => ({ ...prev, error: null }));
 
-      const { channelARN, endpointsByProtocol, iceServers } = await getKvsInfrastructure('VIEWER');
+      const infra = await getKvsInfrastructure('VIEWER');
 
       const clientId = `viewer-${Date.now()}`;
 
       const signalingClient = new SignalingClient({
-        channelARN,
-        channelEndpoint: endpointsByProtocol.WSS,
+        channelARN: infra.channelARN,
+        channelEndpoint: infra.endpointsByProtocol.WSS,
         role: Role.VIEWER,
         clientId,
-        region: kvsConfig.region,
+        region: infra.region,
         credentials: {
-          accessKeyId: kvsConfig.accessKeyId,
-          secretAccessKey: kvsConfig.secretAccessKey,
+          accessKeyId: infra.credentials.accessKeyId,
+          secretAccessKey: infra.credentials.secretAccessKey,
         },
       });
       viewerSignalingClientRef.current = signalingClient;
 
-      const peerConnection = new RTCPeerConnection({ iceServers });
+      const peerConnection = new RTCPeerConnection({ iceServers: infra.iceServers });
       viewerPeerConnectionRef.current = peerConnection;
 
       const remoteStream = new MediaStream();
@@ -282,7 +233,6 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
       client.on('open', async () => {
         console.log('[KVS Viewer] Signaling connected, creating offer');
-        // Add a transceiver to receive video
         peerConnection.addTransceiver('video', { direction: 'recvonly' });
         peerConnection.addTransceiver('audio', { direction: 'recvonly' });
 
