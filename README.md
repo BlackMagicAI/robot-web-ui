@@ -60,6 +60,7 @@ This project is built with:
 - shadcn-ui
 - Tailwind CSS
 - SmartFox Server SDK
+- minor update
 
 ## How can I deploy this project?
 
