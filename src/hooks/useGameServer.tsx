@@ -71,7 +71,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
 
   // Set connection parameters
   const config: Config = {
-    host: "127.0.0.1",
+    host: import.meta.env.VITE_GAME_SERVER_HOST || "127.0.0.1",
     port: 8080,
     debug: true,
     useSSL: false
