@@ -4,6 +4,9 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface KvsConfig {
   channelName: string;
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
 }
 
 interface KvsInfrastructure {
@@ -75,10 +78,16 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     setState((prev) => ({ ...prev, selectedDeviceId: deviceId }));
   }, []);
 
-  /** Call Edge Function to get KVS infrastructure (no AWS creds on client) */
+  /** Call Edge Function to get KVS infrastructure, passing client-side credentials */
   const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER'): Promise<KvsInfrastructure> => {
     const { data, error } = await supabase.functions.invoke('kvs-credentials', {
-      body: { channelName: kvsConfig.channelName, role },
+      body: {
+        channelName: kvsConfig.channelName,
+        role,
+        region: kvsConfig.region,
+        accessKeyId: kvsConfig.accessKeyId,
+        secretAccessKey: kvsConfig.secretAccessKey,
+      },
     });
 
     if (error) {
@@ -86,7 +95,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     }
 
     return data as KvsInfrastructure;
-  }, [kvsConfig.channelName]);
+  }, [kvsConfig.channelName, kvsConfig.region, kvsConfig.accessKeyId, kvsConfig.secretAccessKey]);
 
   // ─── MASTER: stream local webcam ───────────────────────────────────
 
