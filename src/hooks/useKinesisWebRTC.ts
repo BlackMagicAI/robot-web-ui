@@ -194,7 +194,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
     }
-    setState((prev) => ({ ...prev, isStreaming: false, error: null }));
+    setState((prev) => ({ ...prev, isStreaming: false, error: null, signedUrl: null }));
   }, []);
 
   // ─── VIEWER: receive remote stream ─────────────────────────────────
