@@ -27,9 +27,10 @@ function loadConfig(): KvsConfig {
 interface KvsConfigFormProps {
   config: KvsConfig;
   onChange: (config: KvsConfig) => void;
+  signedUrl?: string | null;
 }
 
-export const KvsConfigForm = ({ config, onChange }: KvsConfigFormProps) => {
+export const KvsConfigForm = ({ config, onChange, signedUrl }: KvsConfigFormProps) => {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<KvsConfig>(config);
 
@@ -65,6 +66,16 @@ export const KvsConfigForm = ({ config, onChange }: KvsConfigFormProps) => {
           <p className="text-xs text-muted-foreground">
             AWS credentials are securely stored server-side.
           </p>
+          {signedUrl && (
+            <div className="space-y-1">
+              <Label className="text-xs">Signed URL</Label>
+              <textarea
+                readOnly
+                className="w-full h-16 text-[10px] font-mono bg-muted border rounded p-1.5 resize-none break-all"
+                value={signedUrl}
+              />
+            </div>
+          )}
           <Button size="sm" className="w-full h-7 text-xs" onClick={handleSave}>
             <Save className="w-3 h-3 mr-1" /> Save Config
           </Button>

@@ -1,5 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { SignalingClient, Role } from 'amazon-kinesis-video-streams-webrtc';
+import { SignalingClient, Role, SigV4RequestSigner } from 'amazon-kinesis-video-streams-webrtc';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface KvsConfig {
@@ -23,6 +23,7 @@ interface KinesisState {
   error: string | null;
   selectedDeviceId: string | null;
   availableCameras: MediaDeviceInfo[];
+  signedUrl: string | null;
 }
 
 export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
@@ -32,6 +33,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     error: null,
     selectedDeviceId: null,
     availableCameras: [],
+    signedUrl: null,
   });
 
   const signalingClientRef = useRef<SignalingClient | null>(null);
@@ -108,6 +110,15 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
       const infra = await getKvsInfrastructure('MASTER');
 
+      // Generate signed URL using SigV4RequestSigner
+      const signer = new SigV4RequestSigner(infra.region, infra.credentials);
+      const queryParams: Record<string, string> = {
+        'X-Amz-ChannelARN': infra.channelARN,
+      };
+      const signedUrl = await signer.getSignedURL(infra.endpointsByProtocol.WSS, queryParams);
+      console.log('[KVS Master] Signed URL generated');
+      setState((prev) => ({ ...prev, signedUrl }));
+
       const signalingClient = new SignalingClient({
         channelARN: infra.channelARN,
         channelEndpoint: infra.endpointsByProtocol.WSS,
@@ -183,7 +194,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
     }
-    setState((prev) => ({ ...prev, isStreaming: false, error: null }));
+    setState((prev) => ({ ...prev, isStreaming: false, error: null, signedUrl: null }));
   }, []);
 
   // ─── VIEWER: receive remote stream ─────────────────────────────────
