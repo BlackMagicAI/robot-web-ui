@@ -69,7 +69,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
     if (isViewing) {
       stopViewing();
     } else {
-      await startViewing();
+      await startViewing(signedUrl || undefined);
     }
   };
 
