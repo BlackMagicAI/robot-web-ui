@@ -199,7 +199,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
   // ─── VIEWER: receive remote stream ─────────────────────────────────
 
-  const startViewing = useCallback(async () => {
+  const startViewing = useCallback(async (preSignedUrl?: string) => {
     try {
       setState((prev) => ({ ...prev, error: null }));
 
@@ -207,17 +207,27 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
       const clientId = `viewer-${Date.now()}`;
 
-      const signalingClient = new SignalingClient({
-        channelARN: infra.channelARN,
-        channelEndpoint: infra.endpointsByProtocol.WSS,
-        role: Role.VIEWER,
-        clientId,
-        region: infra.region,
-        credentials: {
-          accessKeyId: infra.credentials.accessKeyId,
-          secretAccessKey: infra.credentials.secretAccessKey,
-        },
-      });
+      // If a pre-signed URL is provided, connect directly via URL
+      const signalingClientConfig: any = preSignedUrl
+        ? {
+            channelARN: infra.channelARN,
+            channelEndpoint: preSignedUrl,
+            role: Role.VIEWER,
+            clientId,
+          }
+        : {
+            channelARN: infra.channelARN,
+            channelEndpoint: infra.endpointsByProtocol.WSS,
+            role: Role.VIEWER,
+            clientId,
+            region: infra.region,
+            credentials: {
+              accessKeyId: infra.credentials.accessKeyId,
+              secretAccessKey: infra.credentials.secretAccessKey,
+            },
+          };
+
+      const signalingClient = new SignalingClient(signalingClientConfig);
       viewerSignalingClientRef.current = signalingClient;
 
       const peerConnection = new RTCPeerConnection({ iceServers: infra.iceServers });
