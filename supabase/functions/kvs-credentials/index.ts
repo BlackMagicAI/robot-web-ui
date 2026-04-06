@@ -7,17 +7,8 @@ const corsHeaders = {
 };
 
 interface RequestBody {
-  channelARN: string;
+  channelName: string;
   role: "MASTER" | "VIEWER";
-}
-
-/** Extract region from a KVS channel ARN: arn:aws:kinesisvideo:<region>:<account>:channel/... */
-function regionFromARN(arn: string): string {
-  const parts = arn.split(":");
-  if (parts.length < 4 || parts[0] !== "arn") {
-    throw new Error("Invalid channel ARN format");
-  }
-  return parts[3];
 }
 
 Deno.serve(async (req) => {
@@ -52,6 +43,7 @@ Deno.serve(async (req) => {
     // Get AWS credentials from secrets
     const accessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID");
     const secretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY");
+    const region = Deno.env.get("AWS_KVS_REGION") || "us-east-1";
 
     if (!accessKeyId || !secretAccessKey) {
       return new Response(
@@ -60,18 +52,37 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { channelARN, role }: RequestBody = await req.json();
+    const { channelName, role }: RequestBody = await req.json();
 
-    if (!channelARN || !role || !["MASTER", "VIEWER"].includes(role)) {
+    if (!channelName || !role || !["MASTER", "VIEWER"].includes(role)) {
       return new Response(
-        JSON.stringify({ error: "Invalid channelARN or role" }),
+        JSON.stringify({ error: "Invalid channelName or role" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const region = regionFromARN(channelARN);
+    // Step 1: Describe signaling channel to get ARN
+    const describeUrl = `https://kinesisvideo.${region}.amazonaws.com/describeSignalingChannel`;
+    const describeRes = await signedFetch(describeUrl, region, accessKeyId, secretAccessKey, "POST", 
+      JSON.stringify({ ChannelName: channelName }), "kinesisvideo");
+    const describeData = await describeRes.json();
+    
+    if (!describeRes.ok) {
+      return new Response(
+        JSON.stringify({ error: `AWS DescribeSignalingChannel failed: ${JSON.stringify(describeData)}` }),
+        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
-    // Step 1: Get signaling channel endpoints
+    const channelARN = describeData.ChannelInfo?.ChannelARN;
+    if (!channelARN) {
+      return new Response(
+        JSON.stringify({ error: "Channel ARN not found" }),
+        { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Step 2: Get signaling channel endpoints
     const getEndpointUrl = `https://kinesisvideo.${region}.amazonaws.com/getSignalingChannelEndpoint`;
     const getEndpointRes = await signedFetch(getEndpointUrl, region, accessKeyId, secretAccessKey, "POST",
       JSON.stringify({
@@ -97,7 +108,7 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Step 2: Get ICE server config
+    // Step 3: Get ICE server config
     const httpsEndpoint = endpointsByProtocol.HTTPS;
     const getIceUrl = `${httpsEndpoint}/v1/get-ice-server-config`;
     const getIceRes = await signedFetch(getIceUrl, region, accessKeyId, secretAccessKey, "POST",
@@ -122,6 +133,9 @@ Deno.serve(async (req) => {
       });
     }
 
+    // Return credentials needed for WebRTC signaling
+    // The client still needs credentials for the SignalingClient WebSocket connection
+    // We return short-context info (the creds are already server-side, but SignalingClient SDK needs them)
     return new Response(
       JSON.stringify({
         channelARN,

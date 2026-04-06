@@ -3,7 +3,7 @@ import { SignalingClient, Role, SigV4RequestSigner } from 'amazon-kinesis-video-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface KvsConfig {
-  channelARN: string;
+  channelName: string;
 }
 
 interface KvsInfrastructure {
@@ -75,13 +75,10 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     setState((prev) => ({ ...prev, selectedDeviceId: deviceId }));
   }, []);
 
-  /** Call Edge Function to get KVS infrastructure using the channel ARN */
+  /** Call Edge Function to get KVS infrastructure (no AWS creds on client) */
   const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER'): Promise<KvsInfrastructure> => {
     const { data, error } = await supabase.functions.invoke('kvs-credentials', {
-      body: {
-        channelARN: kvsConfig.channelARN,
-        role,
-      },
+      body: { channelName: kvsConfig.channelName, role },
     });
 
     if (error) {
@@ -89,7 +86,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     }
 
     return data as KvsInfrastructure;
-  }, [kvsConfig.channelARN]);
+  }, [kvsConfig.channelName]);
 
   // ─── MASTER: stream local webcam ───────────────────────────────────
 

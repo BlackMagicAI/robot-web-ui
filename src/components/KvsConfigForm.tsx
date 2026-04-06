@@ -10,7 +10,7 @@ import type { KvsConfig } from '@/hooks/useKinesisWebRTC';
 const STORAGE_KEY = 'kvs-config';
 
 const DEFAULT_CONFIG: KvsConfig = {
-  channelARN: '',
+  channelName: '',
 };
 
 function loadConfig(): KvsConfig {
@@ -18,9 +18,7 @@ function loadConfig(): KvsConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return {
-        channelARN: parsed.channelARN || '',
-      };
+      return { channelName: parsed.channelName || '' };
     }
   } catch {}
   return DEFAULT_CONFIG;
@@ -57,14 +55,17 @@ export const KvsConfigForm = ({ config, onChange, signedUrl }: KvsConfigFormProp
         <Card className="p-3 mt-2 space-y-3">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">KVS Config</h4>
           <div className="space-y-1">
-            <Label className="text-xs">Signaling Channel ARN</Label>
+            <Label className="text-xs">Channel Name</Label>
             <Input
               className="h-7 text-xs"
-              value={draft.channelARN}
-              onChange={(e) => setDraft((prev) => ({ ...prev, channelARN: e.target.value }))}
-              placeholder="arn:aws:kinesisvideo:us-west-2:123456789:channel/my-channel/1234567890"
+              value={draft.channelName}
+              onChange={(e) => setDraft((prev) => ({ ...prev, channelName: e.target.value }))}
+              placeholder="my-channel"
             />
           </div>
+          <p className="text-xs text-muted-foreground">
+            AWS credentials are securely stored server-side.
+          </p>
           {signedUrl && (
             <div className="space-y-1">
               <Label className="text-xs">Signed URL</Label>
