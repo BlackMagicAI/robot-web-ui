@@ -1,8 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SignalingClient, Role, SigV4RequestSigner } from 'amazon-kinesis-video-streams-webrtc';
-import { KinesisVideoClient, GetSignalingChannelEndpointCommand, ResourceEndpointListItem,  } from "@aws-sdk/client-kinesis-video";
+import { KinesisVideoClient, GetSignalingChannelEndpointCommand, ResourceEndpointListItem } from "@aws-sdk/client-kinesis-video";
 import { KinesisVideoSignalingClient, GetIceServerConfigCommand } from "@aws-sdk/client-kinesis-video-signaling";
-import { supabase } from '@/integrations/supabase/client';
 
 export interface KvsConfig {
   region: string;
@@ -79,18 +78,20 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     setState((prev) => ({ ...prev, selectedDeviceId: deviceId }));
   }, []);
 
-  /** Call Edge Function to get KVS infrastructure (no AWS creds on client) */
-  const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER'): Promise<KvsInfrastructure> => {
-    const { data, error } = await supabase.functions.invoke('get-secrets', {
-      body: { name: 'Functions' },
-    })
-
-    if (error) {
-      throw new Error(`Failed to get KVS credentials: ${error.message}`);
+  /** Build KVS infrastructure object from form config */
+  const getKvsInfrastructure = useCallback((): KvsInfrastructure => {
+    if (!kvsConfig.region || !kvsConfig.accessKeyId || !kvsConfig.secretAccessKey || !kvsConfig.channelARN) {
+      throw new Error('Please fill in all KVS config fields (region, access key, secret key, channel ARN)');
     }
-
-    return data as KvsInfrastructure;
-  }, [kvsConfig.channelName]);
+    return {
+      channelARN: kvsConfig.channelARN,
+      region: kvsConfig.region,
+      credentials: {
+        accessKeyId: kvsConfig.accessKeyId,
+        secretAccessKey: kvsConfig.secretAccessKey,
+      },
+    };
+  }, [kvsConfig]);
 
   // ─── MASTER: stream local webcam ───────────────────────────────────
   
