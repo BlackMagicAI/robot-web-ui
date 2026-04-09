@@ -10,7 +10,11 @@ import type { KvsConfig } from '@/hooks/useKinesisWebRTC';
 const STORAGE_KEY = 'kvs-config';
 
 const DEFAULT_CONFIG: KvsConfig = {
+  region: '',
+  accessKeyId: '',
+  secretAccessKey: '',
   channelName: '',
+  channelARN: '',
 };
 
 function loadConfig(): KvsConfig {
@@ -18,7 +22,13 @@ function loadConfig(): KvsConfig {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored);
-      return { channelName: parsed.channelName || '' };
+      return {
+        region: parsed.region || '',
+        accessKeyId: parsed.accessKeyId || '',
+        secretAccessKey: parsed.secretAccessKey || '',
+        channelName: parsed.channelName || '',
+        channelARN: parsed.channelARN || '',
+      };
     }
   } catch {}
   return DEFAULT_CONFIG;
@@ -55,6 +65,34 @@ export const KvsConfigForm = ({ config, onChange, signedUrl }: KvsConfigFormProp
         <Card className="p-3 mt-2 space-y-3">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">KVS Config</h4>
           <div className="space-y-1">
+            <Label className="text-xs">Region</Label>
+            <Input
+              className="h-7 text-xs"
+              value={draft.region}
+              onChange={(e) => setDraft((prev) => ({ ...prev, region: e.target.value }))}
+              placeholder="us-east-1"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Access Key ID</Label>
+            <Input
+              className="h-7 text-xs"
+              value={draft.accessKeyId}
+              onChange={(e) => setDraft((prev) => ({ ...prev, accessKeyId: e.target.value }))}
+              placeholder="AKIA..."
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Secret Access Key</Label>
+            <Input
+              className="h-7 text-xs"
+              type="password"
+              value={draft.secretAccessKey}
+              onChange={(e) => setDraft((prev) => ({ ...prev, secretAccessKey: e.target.value }))}
+              placeholder="••••••••"
+            />
+          </div>
+          <div className="space-y-1">
             <Label className="text-xs">Channel Name</Label>
             <Input
               className="h-7 text-xs"
@@ -63,9 +101,15 @@ export const KvsConfigForm = ({ config, onChange, signedUrl }: KvsConfigFormProp
               placeholder="my-channel"
             />
           </div>
-          <p className="text-xs text-muted-foreground">
-            AWS credentials are securely stored server-side.
-          </p>
+          <div className="space-y-1">
+            <Label className="text-xs">Channel ARN</Label>
+            <Input
+              className="h-7 text-xs"
+              value={draft.channelARN}
+              onChange={(e) => setDraft((prev) => ({ ...prev, channelARN: e.target.value }))}
+              placeholder="arn:aws:kinesisvideo:..."
+            />
+          </div>
           {signedUrl && (
             <div className="space-y-1">
               <Label className="text-xs">Signed URL</Label>

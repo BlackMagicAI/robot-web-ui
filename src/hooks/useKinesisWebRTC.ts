@@ -5,7 +5,11 @@ import { KinesisVideoSignalingClient, GetIceServerConfigCommand } from "@aws-sdk
 import { supabase } from '@/integrations/supabase/client';
 
 export interface KvsConfig {
+  region: string;
+  accessKeyId: string;
+  secretAccessKey: string;
   channelName: string;
+  channelARN: string;
 }
 
 interface KvsInfrastructure {
