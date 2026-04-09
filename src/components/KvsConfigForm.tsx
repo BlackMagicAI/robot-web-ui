@@ -38,6 +38,7 @@ interface KvsConfigFormProps {
   config: KvsConfig;
   onChange: (config: KvsConfig) => void;
   signedUrl?: string | null;
+  isConsumer?: boolean;
 }
 
 export const KvsConfigForm = ({ config, onChange, signedUrl }: KvsConfigFormProps) => {
