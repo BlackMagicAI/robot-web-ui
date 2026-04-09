@@ -38,10 +38,11 @@ interface KvsConfigFormProps {
   config: KvsConfig;
   onChange: (config: KvsConfig) => void;
   signedUrl?: string | null;
+  onSignedUrlChange?: (url: string) => void;
   isConsumer?: boolean;
 }
 
-export const KvsConfigForm = ({ config, onChange, signedUrl, isConsumer = false }: KvsConfigFormProps) => {
+export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, isConsumer = false }: KvsConfigFormProps) => {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<KvsConfig>(config);
 
@@ -121,6 +122,7 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, isConsumer = false 
               readOnly={!isConsumer}
               className="w-full h-16 text-[10px] font-mono bg-muted border rounded p-1.5 resize-none break-all"
               value={signedUrl || ''}
+              onChange={(e) => onSignedUrlChange?.(e.target.value)}
               placeholder={isConsumer ? "Paste signed WebSocket URL here..." : "Generated when streaming..."}
             />
           </div>
