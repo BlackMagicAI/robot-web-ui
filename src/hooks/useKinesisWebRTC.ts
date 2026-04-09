@@ -401,6 +401,10 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     return iceServers;
   }
 
+  const setSignedUrl = useCallback((url: string) => {
+    setState((prev) => ({ ...prev, signedUrl: url || null }));
+  }, []);
+
   return {
     ...state,
     localVideoRef,
@@ -410,6 +414,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     startStreaming,
     stopStreaming,
     startViewing,
-    stopViewing
+    stopViewing,
+    setSignedUrl,
   };
 };
