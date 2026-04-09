@@ -41,7 +41,7 @@ interface KvsConfigFormProps {
   isConsumer?: boolean;
 }
 
-export const KvsConfigForm = ({ config, onChange, signedUrl }: KvsConfigFormProps) => {
+export const KvsConfigForm = ({ config, onChange, signedUrl, isConsumer = false }: KvsConfigFormProps) => {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<KvsConfig>(config);
 
