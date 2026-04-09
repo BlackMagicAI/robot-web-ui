@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { SignalingClient, Role, SigV4RequestSigner } from 'amazon-kinesis-video-streams-webrtc';
+import { KinesisVideoClient, GetSignalingChannelEndpointCommand, ResourceEndpointListItem,  } from "@aws-sdk/client-kinesis-video";
+import { KinesisVideoSignalingClient, GetIceServerConfigCommand } from "@aws-sdk/client-kinesis-video-signaling";
 import { supabase } from '@/integrations/supabase/client';
 
 export interface KvsConfig {
@@ -8,8 +10,6 @@ export interface KvsConfig {
 
 interface KvsInfrastructure {
   channelARN: string;
-  endpointsByProtocol: Record<string, string>;
-  iceServers: RTCIceServer[];
   region: string;
   credentials: {
     accessKeyId: string;
@@ -77,9 +77,9 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
   /** Call Edge Function to get KVS infrastructure (no AWS creds on client) */
   const getKvsInfrastructure = useCallback(async (role: 'MASTER' | 'VIEWER'): Promise<KvsInfrastructure> => {
-    const { data, error } = await supabase.functions.invoke('kvs-credentials', {
-      body: { channelName: kvsConfig.channelName, role },
-    });
+    const { data, error } = await supabase.functions.invoke('get-secrets', {
+      body: { name: 'Functions' },
+    })
 
     if (error) {
       throw new Error(`Failed to get KVS credentials: ${error.message}`);
@@ -89,7 +89,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   }, [kvsConfig.channelName]);
 
   // ─── MASTER: stream local webcam ───────────────────────────────────
-
+  
   const startStreaming = useCallback(async (deviceId?: string) => {
     try {
       setState((prev) => ({ ...prev, error: null }));
@@ -110,18 +110,54 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
       const infra = await getKvsInfrastructure('MASTER');
 
+      const client1 = new KinesisVideoClient({ 
+        region: infra.region,
+        credentials: {
+          secretAccessKey: infra.credentials.secretAccessKey,
+          accessKeyId:infra.credentials.accessKeyId
+        }
+       });
+
+      const getEndpoints = async (infra, role) => {
+        const command = new GetSignalingChannelEndpointCommand({
+          ChannelARN: infra.channelARN,
+          SingleMasterChannelEndpointConfiguration: {
+            Protocols: ["WSS", "HTTPS"], // Request both websocket and HTTPS endpoints
+            Role: role,             // Use "VIEWER" if connecting as a viewer
+          },
+        });
+      
+        try {
+
+          const response = await client1.send(command);
+          
+          // Map the list into a cleaner object
+          const endpoints = response.ResourceEndpointList.reduce((acc, item) => {
+            acc[item.Protocol] = item.ResourceEndpoint;
+            return acc;
+          }, {});
+          return endpoints;
+        } catch (error) {
+          console.error("Error fetching endpoints:", error);
+        }
+      };
+
+      const signalingChannelEndpoints = await getEndpoints(infra, Role.MASTER);
+      console.log("WSS signalingChannelEndpoints*****:", signalingChannelEndpoints["WSS"]);
+
       // Generate signed URL using SigV4RequestSigner
       const signer = new SigV4RequestSigner(infra.region, infra.credentials);
       const queryParams: Record<string, string> = {
         'X-Amz-ChannelARN': infra.channelARN,
       };
-      const signedUrl = await signer.getSignedURL(infra.endpointsByProtocol.WSS, queryParams);
+
+      const signedUrl = await signer.getSignedURL(signalingChannelEndpoints["WSS"], queryParams);
       console.log('[KVS Master] Signed URL generated');
       setState((prev) => ({ ...prev, signedUrl }));
 
       const signalingClient = new SignalingClient({
         channelARN: infra.channelARN,
-        channelEndpoint: infra.endpointsByProtocol.WSS,
+        channelEndpoint: signalingChannelEndpoints["WSS"],
         role: Role.MASTER,
         region: infra.region,
         credentials: {
@@ -129,17 +165,18 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
           secretAccessKey: infra.credentials.secretAccessKey,
         },
       });
+      
       signalingClientRef.current = signalingClient;
 
       const client = signalingClient as any;
-
+      infra.channelARN
       client.on('open', () => {
         console.log('[KVS Master] Signaling client connected');
       });
 
       client.on('sdpOffer', async (offer: RTCSessionDescriptionInit, remoteClientId: string) => {
-        console.log('[KVS Master] Received SDP offer from:', remoteClientId);
-        const peerConnection = new RTCPeerConnection({ iceServers: infra.iceServers });
+        const rTCIceServers: RTCIceServer[] = await getIceServers(infra, signalingChannelEndpoints);
+        const peerConnection = new RTCPeerConnection({ iceServers:  rTCIceServers });
         peerConnectionRef.current = peerConnection;
 
         localStream.getTracks().forEach((track) => {
@@ -202,8 +239,40 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   const startViewing = useCallback(async (preSignedUrl?: string) => {
     try {
       setState((prev) => ({ ...prev, error: null }));
-
       const infra = await getKvsInfrastructure('VIEWER');
+      const client1 = new KinesisVideoClient({ 
+        region: infra.region,
+        credentials: {
+          secretAccessKey: infra.credentials.secretAccessKey,
+          accessKeyId:infra.credentials.accessKeyId
+        }
+       });
+
+      const getEndpoints = async (infra, role) => {
+        const command = new GetSignalingChannelEndpointCommand({
+          ChannelARN: infra.channelARN,
+          SingleMasterChannelEndpointConfiguration: {
+            Protocols: ["WSS", "HTTPS"], // Request both websocket and HTTPS endpoints
+            Role: role,             // Use "VIEWER" if connecting as a viewer
+          },
+        });
+      
+        try {
+          const response = await client1.send(command);
+          
+          // Map the list into a cleaner object
+          const endpoints = response.ResourceEndpointList.reduce((acc, item) => {
+            acc[item.Protocol] = item.ResourceEndpoint;
+            return acc;
+          }, {});
+
+          return endpoints;
+        } catch (error) {
+          console.error("Error fetching endpoints:", error);
+        }
+      };
+
+      const signalingChannelEndpointsViewer = await getEndpoints(infra, Role.VIEWER);
 
       const clientId = `viewer-${Date.now()}`;
 
@@ -217,7 +286,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
           }
         : {
             channelARN: infra.channelARN,
-            channelEndpoint: infra.endpointsByProtocol.WSS,
+            channelEndpoint: signalingChannelEndpointsViewer["WSS"],
             role: Role.VIEWER,
             clientId,
             region: infra.region,
@@ -229,8 +298,9 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
 
       const signalingClient = new SignalingClient(signalingClientConfig);
       viewerSignalingClientRef.current = signalingClient;
-
-      const peerConnection = new RTCPeerConnection({ iceServers: infra.iceServers });
+     
+      const iceServers = await getIceServers(infra, signalingChannelEndpointsViewer);
+      const peerConnection = new RTCPeerConnection({ iceServers: iceServers });
       viewerPeerConnectionRef.current = peerConnection;
 
       const remoteStream = new MediaStream();
@@ -305,6 +375,27 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     setState((prev) => ({ ...prev, isViewing: false, error: null }));
   }, []);
 
+  const getIceServers = async (infra, endpoints: ResourceEndpointListItem) => { //TODO add caching logic
+    const signalingChannelsClientX = new KinesisVideoSignalingClient({ region: infra.region,
+      credentials: infra.credentials,
+      endpoint: endpoints['HTTPS'],
+      });
+
+      const params = {
+        ChannelARN: infra.channelARN, // required
+      };
+
+    const commandx = new GetIceServerConfigCommand(params);
+    const response = await signalingChannelsClientX.send(commandx);
+    // 2. Map the response to the standard WebRTC iceServers format
+    const iceServers = response.IceServerList.map(server => ({
+      urls: server.Uris,
+      username: server.Username,
+      credential: server.Password
+    }));
+    return iceServers;
+  }
+
   return {
     ...state,
     localVideoRef,
@@ -314,6 +405,6 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     startStreaming,
     stopStreaming,
     startViewing,
-    stopViewing,
+    stopViewing
   };
 };
