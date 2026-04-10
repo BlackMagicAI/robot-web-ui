@@ -66,17 +66,17 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, 
       <CollapsibleContent>
         <Card className="p-3 mt-2 space-y-3">
           <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">KVS Config</h4>
+          <div className="space-y-1">
+            <Label className="text-xs">Region</Label>
+            <Input
+              className="h-7 text-xs"
+              value={draft.region}
+              onChange={(e) => setDraft((prev) => ({ ...prev, region: e.target.value }))}
+              placeholder="us-east-1"
+            />
+          </div>
           {!isConsumer && (
             <>
-              <div className="space-y-1">
-                <Label className="text-xs">Region</Label>
-                <Input
-                  className="h-7 text-xs"
-                  value={draft.region}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, region: e.target.value }))}
-                  placeholder="us-east-1"
-                />
-              </div>
               <div className="space-y-1">
                 <Label className="text-xs">Access Key ID</Label>
                 <Input
@@ -105,17 +105,17 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, 
                   placeholder="my-channel"
                 />
               </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Channel ARN</Label>
-                <Input
-                  className="h-7 text-xs"
-                  value={draft.channelARN}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, channelARN: e.target.value }))}
-                  placeholder="arn:aws:kinesisvideo:..."
-                />
-              </div>
             </>
           )}
+          <div className="space-y-1">
+            <Label className="text-xs">Channel ARN</Label>
+            <Input
+              className="h-7 text-xs"
+              value={draft.channelARN}
+              onChange={(e) => setDraft((prev) => ({ ...prev, channelARN: e.target.value }))}
+              placeholder="arn:aws:kinesisvideo:..."
+            />
+          </div>
           <div className="space-y-1">
             <Label className="text-xs">Signed URL</Label>
             <textarea
