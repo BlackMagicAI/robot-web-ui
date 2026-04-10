@@ -244,7 +244,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   const startViewing = useCallback(async (preSignedUrl?: string) => {
     try {
       setState((prev) => ({ ...prev, error: null }));
-      const infra = getKvsInfrastructure();
+      const infra = getKvsInfrastructure(!!preSignedUrl);
       const client1 = new KinesisVideoClient({ 
         region: infra.region,
         credentials: {
