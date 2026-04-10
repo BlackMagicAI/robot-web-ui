@@ -75,38 +75,34 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, 
               placeholder="us-east-1"
             />
           </div>
-          {!isConsumer && (
-            <>
-              <div className="space-y-1">
-                <Label className="text-xs">Access Key ID</Label>
-                <Input
-                  className="h-7 text-xs"
-                  value={draft.accessKeyId}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, accessKeyId: e.target.value }))}
-                  placeholder="AKIA..."
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Secret Access Key</Label>
-                <Input
-                  className="h-7 text-xs"
-                  type="password"
-                  value={draft.secretAccessKey}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, secretAccessKey: e.target.value }))}
-                  placeholder="••••••••"
-                />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Channel Name</Label>
-                <Input
-                  className="h-7 text-xs"
-                  value={draft.channelName}
-                  onChange={(e) => setDraft((prev) => ({ ...prev, channelName: e.target.value }))}
-                  placeholder="my-channel"
-                />
-              </div>
-            </>
-          )}
+          <div className="space-y-1">
+            <Label className="text-xs">Access Key ID</Label>
+            <Input
+              className="h-7 text-xs"
+              value={draft.accessKeyId}
+              onChange={(e) => setDraft((prev) => ({ ...prev, accessKeyId: e.target.value }))}
+              placeholder="AKIA..."
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Secret Access Key</Label>
+            <Input
+              className="h-7 text-xs"
+              type="password"
+              value={draft.secretAccessKey}
+              onChange={(e) => setDraft((prev) => ({ ...prev, secretAccessKey: e.target.value }))}
+              placeholder="••••••••"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Channel Name</Label>
+            <Input
+              className="h-7 text-xs"
+              value={draft.channelName}
+              onChange={(e) => setDraft((prev) => ({ ...prev, channelName: e.target.value }))}
+              placeholder="my-channel"
+            />
+          </div>
           <div className="space-y-1">
             <Label className="text-xs">Channel ARN</Label>
             <Input
