@@ -78,9 +78,9 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
     setState((prev) => ({ ...prev, selectedDeviceId: deviceId }));
   }, []);
 
-  /** Build KVS infrastructure object from form config */
-  const getKvsInfrastructure = useCallback((): KvsInfrastructure => {
-    if (!kvsConfig.region || !kvsConfig.accessKeyId || !kvsConfig.secretAccessKey || !kvsConfig.channelARN) {
+  /** Build KVS infrastructure object from form config (validation only for master mode) */
+  const getKvsInfrastructure = useCallback((skipValidation = false): KvsInfrastructure => {
+    if (!skipValidation && (!kvsConfig.region || !kvsConfig.accessKeyId || !kvsConfig.secretAccessKey || !kvsConfig.channelARN)) {
       throw new Error('Please fill in all KVS config fields (region, access key, secret key, channel ARN)');
     }
     return {
@@ -244,7 +244,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
   const startViewing = useCallback(async (preSignedUrl?: string) => {
     try {
       setState((prev) => ({ ...prev, error: null }));
-      const infra = getKvsInfrastructure();
+      const infra = getKvsInfrastructure(!!preSignedUrl);
       const client1 = new KinesisVideoClient({ 
         region: infra.region,
         credentials: {
