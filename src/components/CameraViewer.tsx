@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useKinesisWebRTC } from '@/hooks/useKinesisWebRTC';
 import { KvsConfigForm, loadConfig } from '@/components/KvsConfigForm';
 import type { KvsConfig } from '@/hooks/useKinesisWebRTC';
+import { useGameServer } from '@/hooks/useGameServer';
 
 interface CameraViewerProps {
   title?: string;
@@ -24,6 +25,7 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const [deviceRole, setDeviceRole] = useState<DeviceRole>('robot');
   const [cameraMode, setCameraMode] = useState<CameraMode>('robot');
   const [kvsConfig, setKvsConfig] = useState<KvsConfig>(loadConfig);
+  const { setKvsHandshakePayload, receivedKvsHandshake, clearReceivedKvsHandshake } = useGameServer();
 
   const {
     isStreaming,
@@ -48,6 +50,29 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
       return next;
     });
   });
+
+  // Robot/master: publish KVS handshake payload (iceServers + signedUrl) so it
+  // is sent to any consumer that connects via AddBuddyRequest.
+  useEffect(() => {
+    if (deviceRole === 'robot' && isStreaming && signedUrl && kvsConfig.iceServers?.length) {
+      setKvsHandshakePayload({ iceServers: kvsConfig.iceServers, signedUrl });
+    } else {
+      setKvsHandshakePayload(null);
+    }
+  }, [deviceRole, isStreaming, signedUrl, kvsConfig.iceServers, setKvsHandshakePayload]);
+
+  // Consumer: when a handshake is received from the robot, merge into kvsConfig.
+  useEffect(() => {
+    if (!receivedKvsHandshake) return;
+    if (deviceRole !== 'consumer') return;
+    setKvsConfig((prev) => {
+      const next = { ...prev, iceServers: receivedKvsHandshake.iceServers };
+      try { localStorage.setItem('kvs-config', JSON.stringify(next)); } catch {}
+      return next;
+    });
+    setSignedUrl(receivedKvsHandshake.signedUrl);
+    clearReceivedKvsHandshake();
+  }, [receivedKvsHandshake, deviceRole, setSignedUrl, clearReceivedKvsHandshake]);
 
   useEffect(() => {
     if (cameraMode === 'webcam') {

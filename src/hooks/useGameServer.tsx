@@ -11,6 +11,11 @@ interface Room {
 
 export type JsonCmdLookUp = Record<string, string | Record<string, number> | boolean>;
 
+export interface KvsHandshakePayload {
+  iceServers: any[];
+  signedUrl: string;
+}
+
 interface GameServerContextType {
   isGameServerConnected: boolean;
   isGameServerConnecting: boolean;
@@ -27,6 +32,9 @@ interface GameServerContextType {
   sendBuddyCommand: (command: string, data?: any) => void;
   jsonCmdLookUp: JsonCmdLookUp | null;
   setJsonCmdLookUp: (value: JsonCmdLookUp | null) => void;
+  setKvsHandshakePayload: (payload: KvsHandshakePayload | null) => void;
+  receivedKvsHandshake: KvsHandshakePayload | null;
+  clearReceivedKvsHandshake: () => void;
 }
 
 interface Config {
@@ -63,6 +71,14 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [messageValue, setMessageValue] = useState<Uint8Array>();
   const [jsonCmdLookUp, setJsonCmdLookUp] = useState<JsonCmdLookUp | null>(null);
   const jsonCmdLookUpRef = useRef<JsonCmdLookUp | null>(null);
+  const kvsHandshakePayloadRef = useRef<KvsHandshakePayload | null>(null);
+  const [receivedKvsHandshake, setReceivedKvsHandshake] = useState<KvsHandshakePayload | null>(null);
+
+  const setKvsHandshakePayload = (payload: KvsHandshakePayload | null) => {
+    kvsHandshakePayloadRef.current = payload;
+  };
+
+  const clearReceivedKvsHandshake = () => setReceivedKvsHandshake(null);
 
   // Keep ref in sync with state
   useEffect(() => {
@@ -197,6 +213,22 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const onBuddyAdded = (evt) => {
     console.log("Buddy added: " + evt.buddy.name);
     setIsBuddyConnected(true);
+
+    // If this user is acting as a robot/master and has a KVS handshake payload
+    // ready, push it to the newly-connected buddy (the requesting consumer).
+    const payload = kvsHandshakePayloadRef.current;
+    if (sfs && payload) {
+      try {
+        const params = new SFS2X.SFSObject();
+        params.putUtfString("cmd", "kvshandshake");
+        params.putInt("targetid", evt.buddy.id);
+        params.putUtfString("value", JSON.stringify(payload));
+        sfs.send(new SFS2X.BuddyMessageRequest("buddycmd", evt.buddy, params));
+        console.log("Sent kvshandshake to buddy:", evt.buddy.name);
+      } catch (e) {
+        console.warn("Failed to send kvshandshake:", e);
+      }
+    }
   }
 
   const onBuddyRemoved = (evt) => {
@@ -287,7 +319,19 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     var message = event.message;
     var customParams = event.data; // SFSObject
 
+    const cmd = customParams.getUtfString("cmd");
     var value = customParams.getUtfString("value");
+
+    if (cmd === "kvshandshake") {
+      try {
+        const parsed = JSON.parse(value) as KvsHandshakePayload;
+        console.log("Received kvshandshake from buddy:", sender?.name, parsed);
+        setReceivedKvsHandshake(parsed);
+      } catch (e) {
+        console.warn("Failed to parse kvshandshake payload:", e);
+      }
+      return;
+    }
 
     // Access the current jsonCmdLookUp via ref (avoids stale closure)
     const currentLookUp = jsonCmdLookUpRef.current;
@@ -341,7 +385,10 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     connectToTargetParticipant,
     sendBuddyCommand,
     jsonCmdLookUp,
-    setJsonCmdLookUp
+    setJsonCmdLookUp,
+    setKvsHandshakePayload,
+    receivedKvsHandshake,
+    clearReceivedKvsHandshake,
   };
 
   return (
