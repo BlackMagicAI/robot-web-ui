@@ -114,15 +114,10 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, 
               placeholder="arn:aws:kinesisvideo:..."
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">ICE Servers</Label>
-            <textarea
-              readOnly
-              className="w-full h-20 text-[10px] font-mono bg-muted border rounded p-1.5 resize-none break-all"
-              value={draft.iceServers && draft.iceServers.length ? JSON.stringify(draft.iceServers, null, 2) : ''}
-              placeholder="Populated after starting webcam stream..."
-            />
-          </div>
+          <IceServersField
+            value={draft.iceServers}
+            onChange={(iceServers) => setDraft((prev) => ({ ...prev, iceServers }))}
+          />
           <div className="space-y-1">
             <Label className="text-xs">Signed URL</Label>
             <textarea
@@ -144,3 +139,49 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, 
 
 export { loadConfig };
 export type { KvsConfig };
+
+interface IceServersFieldProps {
+  value: KvsConfig['iceServers'];
+  onChange: (servers: KvsConfig['iceServers']) => void;
+}
+
+const IceServersField = ({ value, onChange }: IceServersFieldProps) => {
+  const [text, setText] = useState(
+    value && value.length ? JSON.stringify(value, null, 2) : ''
+  );
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    setText(value && value.length ? JSON.stringify(value, null, 2) : '');
+  }, [value]);
+
+  const handleChange = (raw: string) => {
+    setText(raw);
+    if (!raw.trim()) {
+      setError(null);
+      onChange([]);
+      return;
+    }
+    try {
+      const parsed = JSON.parse(raw);
+      if (!Array.isArray(parsed)) throw new Error('Must be an array');
+      setError(null);
+      onChange(parsed);
+    } catch (e: any) {
+      setError(e.message || 'Invalid JSON');
+    }
+  };
+
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">ICE Servers</Label>
+      <textarea
+        className="w-full h-20 text-[10px] font-mono bg-muted border rounded p-1.5 resize-none break-all"
+        value={text}
+        onChange={(e) => handleChange(e.target.value)}
+        placeholder='[{"urls":["..."],"username":"...","credential":"..."}]'
+      />
+      {error && <p className="text-[10px] text-destructive">{error}</p>}
+    </div>
+  );
+};
