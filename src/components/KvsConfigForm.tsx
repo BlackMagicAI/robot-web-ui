@@ -114,15 +114,10 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, 
               placeholder="arn:aws:kinesisvideo:..."
             />
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">ICE Servers</Label>
-            <textarea
-              readOnly
-              className="w-full h-20 text-[10px] font-mono bg-muted border rounded p-1.5 resize-none break-all"
-              value={draft.iceServers && draft.iceServers.length ? JSON.stringify(draft.iceServers, null, 2) : ''}
-              placeholder="Populated after starting webcam stream..."
-            />
-          </div>
+          <IceServersField
+            value={draft.iceServers}
+            onChange={(iceServers) => setDraft((prev) => ({ ...prev, iceServers }))}
+          />
           <div className="space-y-1">
             <Label className="text-xs">Signed URL</Label>
             <textarea
