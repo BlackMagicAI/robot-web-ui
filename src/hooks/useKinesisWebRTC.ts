@@ -37,7 +37,10 @@ interface KinesisState {
   signedUrl: string | null;
 }
 
-export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
+export const useKinesisWebRTC = (
+  kvsConfig: KvsConfig,
+  onIceServersUpdate?: (iceServers: iceServerType[]) => void,
+) => {
   const [state, setState] = useState<KinesisState>({
     isStreaming: false,
     isViewing: false,
@@ -159,6 +162,7 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
       });
       
       const ice = await getIceServers(infra, signalingChannelEndpoints);
+      onIceServersUpdate?.(ice);
 
       client.on('sdpOffer', async (offer: RTCSessionDescriptionInit, remoteClientId: string) => {
 
@@ -235,7 +239,8 @@ export const useKinesisWebRTC = (kvsConfig: KvsConfig) => {
  * CustomSigner class takes the url in constructor with a getSignedUrl method which returns the signedURL
  */
 class CustomSigner {
-  constructor (_url) {
+  url: string;
+  constructor (_url: string) {
     this.url = _url;
   }
 

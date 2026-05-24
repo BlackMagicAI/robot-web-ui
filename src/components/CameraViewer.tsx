@@ -41,7 +41,13 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
     startViewing,
     stopViewing,
     setSignedUrl,
-  } = useKinesisWebRTC(kvsConfig);
+  } = useKinesisWebRTC(kvsConfig, (iceServers) => {
+    setKvsConfig((prev) => {
+      const next = { ...prev, iceServers };
+      try { localStorage.setItem('kvs-config', JSON.stringify(next)); } catch {}
+      return next;
+    });
+  });
 
   useEffect(() => {
     if (cameraMode === 'webcam') {
