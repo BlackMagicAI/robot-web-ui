@@ -15,6 +15,7 @@ const DEFAULT_CONFIG: KvsConfig = {
   secretAccessKey: '',
   channelName: '',
   channelARN: '',
+  iceServers: []
 };
 
 function loadConfig(): KvsConfig {
@@ -28,6 +29,7 @@ function loadConfig(): KvsConfig {
         secretAccessKey: parsed.secretAccessKey || '',
         channelName: parsed.channelName || '',
         channelARN: parsed.channelARN || '',
+        iceServers: parsed.iceServers || '',
       };
     }
   } catch {}
@@ -115,7 +117,7 @@ export const KvsConfigForm = ({ config, onChange, signedUrl, onSignedUrlChange, 
           <div className="space-y-1">
             <Label className="text-xs">Signed URL</Label>
             <textarea
-              readOnly={!isConsumer}
+              // readOnly={!isConsumer}
               className="w-full h-16 text-[10px] font-mono bg-muted border rounded p-1.5 resize-none break-all"
               value={signedUrl || ''}
               onChange={(e) => onSignedUrlChange?.(e.target.value)}
