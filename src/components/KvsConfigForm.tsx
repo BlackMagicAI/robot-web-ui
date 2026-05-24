@@ -29,7 +29,7 @@ function loadConfig(): KvsConfig {
         secretAccessKey: parsed.secretAccessKey || '',
         channelName: parsed.channelName || '',
         channelARN: parsed.channelARN || '',
-        iceServers: parsed.iceServers || '',
+        iceServers: parsed.iceServers || [],
       };
     }
   } catch {}
