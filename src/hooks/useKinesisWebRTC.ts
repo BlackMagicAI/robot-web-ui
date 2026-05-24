@@ -239,7 +239,8 @@ export const useKinesisWebRTC = (
  * CustomSigner class takes the url in constructor with a getSignedUrl method which returns the signedURL
  */
 class CustomSigner {
-  constructor (_url) {
+  url: string;
+  constructor (_url: string) {
     this.url = _url;
   }
 
