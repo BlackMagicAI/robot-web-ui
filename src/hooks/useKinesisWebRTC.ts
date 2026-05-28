@@ -248,6 +248,10 @@ class CustomSigner {
     return this.url;
   }
 }
+    const params = new URLSearchParams(new URL(preSignedUrl).search);
+    infra.channelARN = params.get('X-Amz-ChannelARN');
+    infra.region=infra.channelARN.match(/arn:aws:[^:]+:([^:]+):/)[1]; //get region from channelARN
+    
           const signalingClientConfig: any = 
            {
               channelARN: infra.channelARN,
