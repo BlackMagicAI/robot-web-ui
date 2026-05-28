@@ -98,7 +98,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     host: import.meta.env.VITE_GAME_SERVER_HOST || "127.0.0.1",
     port: Number(import.meta.env.VITE_GAME_SERVER_PORT || 8080),
     debug: true,
-    useSSL: false, //set to false when running locally & behind a load balancer in prod
+    useSSL: true, //set to false when running locally & behind a load balancer in prod
   };
 
   // Auto-connect on login
