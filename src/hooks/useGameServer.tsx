@@ -2,6 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useRef, ReactNod
 import * as SFS2X from "sfs2x-api";
 import { SFSRoom } from 'sfs2x-api';
 import { WebBluetoothContextType } from './useWebBluetooth';
+import { useAuth } from './useAuth';
 
 interface Room {
   Room: string;
@@ -74,6 +75,13 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const kvsHandshakePayloadRef = useRef<KvsHandshakePayload | null>(null);
   const [receivedKvsHandshake, setReceivedKvsHandshake] = useState<KvsHandshakePayload | null>(null);
 
+  const { guestRole, user } = useAuth();
+  const guestRoleRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    guestRoleRef.current = guestRole;
+  }, [guestRole]);
+
   const setKvsHandshakePayload = (payload: KvsHandshakePayload | null) => {
     kvsHandshakePayloadRef.current = payload;
   };
@@ -90,7 +98,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     host: import.meta.env.VITE_GAME_SERVER_HOST || "127.0.0.1",
     port: Number(import.meta.env.VITE_GAME_SERVER_PORT || 8080),
     debug: true,
-    useSSL: true,
+    useSSL: true, //set to false when running locally
   };
 
   // Auto-connect on login
@@ -214,20 +222,11 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     console.log("Buddy added: " + evt.buddy.name);
     setIsBuddyConnected(true);
 
-    // If this user is acting as a robot/master and has a KVS handshake payload
-    // ready, push it to the newly-connected buddy (the requesting consumer).
-    const payload = kvsHandshakePayloadRef.current;
-    if (sfs && payload) {
-      try {
-        const params = new SFS2X.SFSObject();
-        params.putUtfString("cmd", "kvshandshake");
-        params.putInt("targetid", evt.buddy.id);
-        params.putUtfString("value", JSON.stringify(payload));
-        sfs.send(new SFS2X.BuddyMessageRequest("buddycmd", evt.buddy, params));
-        console.log("Sent kvshandshake to buddy:", evt.buddy.name);
-      } catch (e) {
-        console.warn("Failed to send kvshandshake:", e);
-      }
+    if(guestRoleRef.current === 'operator'){
+      // Send kvs handshake request
+      var params = new SFS2X.SFSObject();
+      params.putUtfString("cmd", "kvshandshakerequest");
+      sfs.send(new SFS2X.BuddyMessageRequest("buddycmd", evt.buddy, params));
     }
   }
 
@@ -263,6 +262,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     console.log("Login successful; username is " + evt.user.name);
     var rmList = getRoomList();
     setRooms(rmList);
+    sfs.send(new SFS2X.InitBuddyListRequest());
   }
 
   function onLoginError(evt) {
@@ -289,7 +289,13 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
 
   const connectToTargetParticipant = (id: number, name: string) => {
     setCurrentPrivateChat(id);
-    sfs.send(new SFS2X.AddBuddyRequest(name));
+    var buddies = sfs.buddyManager.getBuddyList();
+    // if target buddy is not in the current buddy list (foundBuddy is empty) then send add buddy request
+    const foundBuddy = buddies.find(buddy => buddy.id === id);
+
+    if(!foundBuddy){
+      sfs.send(new SFS2X.AddBuddyRequest(name)) 
+    }
   }
 
   /*
@@ -300,7 +306,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     params.putUtfString("cmd", cmd);
     params.putInt("targetid", currentPrivateChat);
     params.putUtfString("value", value);
-    console.log("Sending command");
+
     if (sfs) {
       // Get the recipient of the message, in this case my buddy
       var buddy = sfs.buddyManager.getBuddyById(Number(currentPrivateChat));
@@ -316,34 +322,48 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const onBuddyMessage = (event) => {
     var isItMe = event.isItMe;
     var sender = event.buddy;
-    var message = event.message;
     var customParams = event.data; // SFSObject
 
     const cmd = customParams.getUtfString("cmd");
-    var value = customParams.getUtfString("value");
+    var dataValue = customParams.getUtfString("value");
 
-    if (cmd === "kvshandshake") {
+    if (cmd === "kvshandshake" && guestRoleRef.current === 'operator') {
       try {
-        const parsed = JSON.parse(value) as KvsHandshakePayload;
-        console.log("Received kvshandshake from buddy:", sender?.name, parsed);
+        const parsed = JSON.parse(dataValue) as KvsHandshakePayload;
+        console.log("Received kvshandshake from buddy:", sender?.name);
         setReceivedKvsHandshake(parsed);
       } catch (e) {
         console.warn("Failed to parse kvshandshake payload:", e);
       }
       return;
+    } else if (cmd === "kvshandshakerequest" && !isItMe){
+      console.info("Received kvshandshakerequest");
+
+    // If this user is acting as a robot/master and has a KVS handshake payload
+    // ready, push it to the newly-connected buddy (the requesting consumer).
+    const payload = kvsHandshakePayloadRef.current;
+
+    if (sfs && payload) {
+      try {
+        const params = new SFS2X.SFSObject();
+        params.putUtfString("cmd", "kvshandshake");
+        params.putInt("targetid", sender.id);
+        params.putUtfString("value", JSON.stringify(payload));
+        sfs.send(new SFS2X.BuddyMessageRequest("buddycmd", sender, params));
+        console.log("Sent kvshandshake to buddy:", sender.name);
+      } catch (e) {
+        console.warn("Failed to send kvshandshake:", e);
+      }
     }
+  }
 
     // Access the current jsonCmdLookUp via ref (avoids stale closure)
     const currentLookUp = jsonCmdLookUpRef.current;
     if (currentLookUp) {
       console.log("onBuddyMessage - jsonCmdLookUp available:", currentLookUp);
-      console.log(value);
-      console.log(typeof currentLookUp[value]);
       // You can now use currentLookUp to interpret or transform the command
-      console.log(currentLookUp[value]);
       const encoder = new TextEncoder();
-      const data = encoder.encode(currentLookUp[value] as string);
-
+      const data = encoder.encode(currentLookUp[dataValue] as string);
         // update message data variable to activate write to device characteristic
         setMessageValue(data);
       }
@@ -357,8 +377,6 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
 
   const onRoomJoin = (evt) => {
     const users: string[] = evt.room._userManager._usersByName;
-    //
-    sfs.send(new SFS2X.InitBuddyListRequest());
   }
 
   const onRoomJoinError = (evt) => {
@@ -367,7 +385,6 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
 
   const onBuddyListInitialized = (...params: any[]) => {
     // Retrieve my buddies list
-    var buddies = sfs.buddyManager.getBuddyList();
     console.log("onBuddyListInitialized - Function not implemented.");
   }
 
