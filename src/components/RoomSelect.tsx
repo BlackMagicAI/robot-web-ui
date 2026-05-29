@@ -94,6 +94,7 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
       <CardContent className="p-0">
         <ScrollArea className="h-[400px] px-6 pb-6">
           <div className="space-y-3">
+            'STUFF-1'
             {mockRooms.map((room) => (
               <div
                 key={room.id}
@@ -133,6 +134,7 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
                 </div>
               </div>
             ))}
+            'STUFF-2'
           </div>
         </ScrollArea>
       </CardContent>
