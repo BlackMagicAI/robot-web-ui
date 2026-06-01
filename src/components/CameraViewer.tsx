@@ -10,6 +10,7 @@ import { useKinesisWebRTC } from '@/hooks/useKinesisWebRTC';
 import { KvsConfigForm, loadConfig } from '@/components/KvsConfigForm';
 import type { KvsConfig } from '@/hooks/useKinesisWebRTC';
 import { useGameServer } from '@/hooks/useGameServer';
+import { useAuth } from '@/hooks/useAuth';
 
 interface CameraViewerProps {
   title?: string;
@@ -22,8 +23,10 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const [isRecording, setIsRecording] = useState(false);
   const [zoom, setZoom] = useState(1);
   const [isConnected, setIsConnected] = useState(false);
-  const [deviceRole, setDeviceRole] = useState<DeviceRole>('robot');
-  const [cameraMode, setCameraMode] = useState<CameraMode>('robot');
+  const { guestRole } = useAuth();
+  const initialRole: DeviceRole = guestRole === 'operator' ? 'consumer' : 'robot';
+  const [deviceRole, setDeviceRole] = useState<DeviceRole>(initialRole);
+  const [cameraMode, setCameraMode] = useState<CameraMode>(initialRole === 'consumer' ? 'viewer' : 'robot');
   const [kvsConfig, setKvsConfig] = useState<KvsConfig>(loadConfig);
   const { setKvsHandshakePayload, receivedKvsHandshake, clearReceivedKvsHandshake } = useGameServer();
 
