@@ -147,7 +147,7 @@ const Auth = () => {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="operator">Operator</SelectItem>
-                        <SelectItem value="ai">AI</SelectItem>
+                        <SelectItem value="ai" disabled>AI (Not Implemented)</SelectItem>
                         <SelectItem value="robot">Robot</SelectItem>
                       </SelectContent>
                     </Select>
