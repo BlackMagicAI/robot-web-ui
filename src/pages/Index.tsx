@@ -23,7 +23,13 @@ const Index = () => {
   const [selectedRoom, setSelectedRoom] = useState<Room | undefined>();
   const [protocolsData, setProtocolsData] = useState<Record<string, JsonCmdLookUp>>({});
   const [selectedProtocol, setSelectedProtocol] = useState<string>('');
-  const { setJsonCmdLookUp, sendBuddyCommand } = useGameServer();
+  const { setJsonCmdLookUp, sendBuddyCommand, isGameServerConnected } = useGameServer();
+
+  useEffect(() => {
+    if (!isGameServerConnected) {
+      setSelectedRoom(undefined);
+    }
+  }, [isGameServerConnected]);
 
   const jsonCmdLookUp: JsonCmdLookUp | null = selectedProtocol ? protocolsData[selectedProtocol] ?? null : null;
 
