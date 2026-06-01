@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useWebBluetooth } from '@/hooks/useWebBluetooth';
+import { useGameServer } from '@/hooks/useGameServer';
 
 interface Profile {
   display_name?: string;
@@ -55,10 +56,14 @@ export const UserAccountMenu = () => {
   };
 
   const { isConnected: isBleConnected, disconnect } = useWebBluetooth();
+  const { isGameServerConnected, disconnect: disconnectGameServer } = useGameServer();
 
   const handleSignOut = async () => {
     if (isBleConnected) {
       await disconnect();
+    }
+    if (isGameServerConnected) {
+      disconnectGameServer();
     }
     const { error } = await signOut();
     if (error) {
