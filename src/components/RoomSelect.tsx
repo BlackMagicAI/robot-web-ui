@@ -56,23 +56,23 @@ export const RoomSelect = ({ onRoomSelect, selectedRoom }: RoomSelectProps) => {
   var roomData: Room[] = [];
 
   useEffect(() => {
-    if (isGameServerConnected) { // Check if myObject is not null before using it
-      // Perform actions with the updated myObject here    
-      if (Array.isArray(rooms) && rooms.length > 0) {
-        for (var r in rooms) {
-          const obj: Room = {
-            id: rooms[r].id.toString(),
-            name: rooms[r].name,
-            description: 'Robot control room',
-            playerCount: rooms[r].userCount,
-            maxPlayers: rooms[r].maxUsers,
-            difficulty: 'Easy',
-            type: 'Exploration'
-          }
-          roomData.push(obj);
-        }
-        setMockRooms(roomData);
-      }
+    if (!isGameServerConnected) {
+      setMockRooms([]);
+      return;
+    }
+    if (Array.isArray(rooms) && rooms.length > 0) {
+      const roomData: Room[] = rooms.map((r) => ({
+        id: r.id.toString(),
+        name: r.name,
+        description: 'Robot control room',
+        playerCount: r.userCount,
+        maxPlayers: r.maxUsers,
+        difficulty: 'Easy',
+        type: 'Exploration',
+      }));
+      setMockRooms(roomData);
+    } else {
+      setMockRooms([]);
     }
   }, [isGameServerConnected, rooms]); // Dependency array: runs when myObject changes
 
