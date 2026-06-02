@@ -122,8 +122,8 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
         {/* Protocol Selection */}
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">Protocol</h4>
-          <Select value={selectedProtocol} onValueChange={onProtocolChange}>
-            <SelectTrigger className="w-full">
+          <Select value={selectedProtocol} onValueChange={onProtocolChange} disabled={guestRole !== 'robot'}>
+            <SelectTrigger className="w-full" disabled={guestRole !== 'robot'}>
               <SelectValue placeholder="Select a protocol" />
             </SelectTrigger>
             <SelectContent>
