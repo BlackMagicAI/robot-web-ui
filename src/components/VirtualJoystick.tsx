@@ -48,6 +48,7 @@ const calculateDifferentialDrive = (angle: number, distance: number): { left: nu
 export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp, sendBuddyCommand }: VirtualJoystickProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [knobPosition, setKnobPosition] = useState({ x: 0, y: 0 });
+  const [debugData, setDebugData] = useState<JoystickData>({ x: 0, y: 0, distance: 0, angle: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>();
 
@@ -88,6 +89,7 @@ export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp, sendBuddyCo
     };
 
     onMove?.(joystickData);
+    setDebugData(joystickData);
   }, [maxDistance, onMove]);
 
   const handleStart = (clientX: number, clientY: number) => {
@@ -110,7 +112,9 @@ export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp, sendBuddyCo
   const handleEnd = () => {
     setIsDragging(false);
     setKnobPosition({ x: 0, y: 0 });
-    onMove?.({ x: 0, y: 0, distance: 0, angle: 0 });
+    const zero = { x: 0, y: 0, distance: 0, angle: 0 };
+    onMove?.(zero);
+    setDebugData(zero);
   };
 
   // Mouse events
@@ -204,6 +208,12 @@ export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp, sendBuddyCo
             boxShadow: 'var(--shadow-glow), 0 2px 8px rgba(0,0,0,0.4)',
           }}
         />
+      </div>
+      <div className="mt-3 bg-card border border-border rounded-lg p-2 text-xs font-mono opacity-75">
+        <div>X: {debugData.x.toFixed(2)}</div>
+        <div>Y: {debugData.y.toFixed(2)}</div>
+        <div>Distance: {debugData.distance.toFixed(2)}</div>
+        <div>Angle: {debugData.angle.toFixed(0)}°</div>
       </div>
     </Card>
   );
