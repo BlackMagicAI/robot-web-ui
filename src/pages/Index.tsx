@@ -19,7 +19,6 @@ export type JsonCmdLookUp = Record<string, string | Record<string, number> | boo
 
 const Index = () => {
   const [isRobotConnected, setIsRobotConnected] = useState(true);
-  const [joystickData, setJoystickData] = useState<JoystickData>({ x: 0, y: 0, distance: 0, angle: 0 });
   const [selectedRoom, setSelectedRoom] = useState<Room | undefined>();
   const [protocolsData, setProtocolsData] = useState<Record<string, JsonCmdLookUp>>({});
   const [selectedProtocol, setSelectedProtocol] = useState<string>('');
@@ -45,7 +44,6 @@ const Index = () => {
   }, []);
 
   const handleJoystickMove = (data: JoystickData) => {
-    setJoystickData(data);
     // In a real application, you would send this data to your robot control API
     if(data.angle >= 45 && data.angle <= 135 && data.distance > .75){
       console.log("Forward");
@@ -110,14 +108,6 @@ const Index = () => {
             </div>
           )}
         </div>
-      </div>
-
-      {/* Debug Info (can be removed in production) */}
-      <div className="fixed bottom-4 left-4 bg-card border border-border rounded-lg p-2 text-xs font-mono opacity-75">
-        <div>X: {joystickData.x.toFixed(2)}</div>
-        <div>Y: {joystickData.y.toFixed(2)}</div>
-        <div>Distance: {joystickData.distance.toFixed(2)}</div>
-        <div>Angle: {joystickData.angle.toFixed(0)}°</div>
       </div>
     </div>
   );
