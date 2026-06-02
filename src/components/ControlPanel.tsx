@@ -112,7 +112,7 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
             variant={isBleConnected ? "secondary" : "outline"}
             className="w-full"
             onClick={handleBleConnect}
-            disabled={guestRole !== 'robot'}
+            disabled={guestRole !== 'robot' || !selectedProtocol}
           >
             <Bluetooth className="w-4 h-4 mr-2" />
             {isBleConnected ? "BLE Connected" : "BLE Connect"}
