@@ -69,7 +69,8 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
   const [currentPrivateChat, setCurrentPrivateChat] = useState<number | -1>(-1);
-  const [messageValue, setMessageValue] = useState<Uint8Array>();
+  // const [messageValue, setMessageValue] = useState<Uint8Array>();
+  const messageValueRef = useRef<Uint8Array | null>(null);
   const [jsonCmdLookUp, setJsonCmdLookUp] = useState<JsonCmdLookUp | null>(null);
   const jsonCmdLookUpRef = useRef<JsonCmdLookUp | null>(null);
   const kvsHandshakePayloadRef = useRef<KvsHandshakePayload | null>(null);
@@ -110,20 +111,39 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     }
   }, [sfs]);
 
-  useEffect(() => {
+  // useEffect(() => {
 
-    if (webBluetooth.isConnected && messageValue) {
+  //   if (webBluetooth.isConnected && messageValue) {
       
-      webBluetooth.writeCharacteristic("0000dfb0-0000-1000-8000-00805f9b34fb", "0000dfb1-0000-1000-8000-00805f9b34fb", messageValue as BufferSource)
-        .then(() => {
-          console.log("Value written to LEDcharacteristic:", messageValue);
-        })
-        .catch(error => {
-          console.error("Error writing to the LED characteristic: ", error);
-          console.error(error);
-        });
-    }
-  }, [messageValue]);
+  //     webBluetooth.writeCharacteristic("0000dfb0-0000-1000-8000-00805f9b34fb", "0000dfb1-0000-1000-8000-00805f9b34fb", messageValue as BufferSource)
+  //       .then(() => {
+  //         console.log("Value written to LEDcharacteristic:", messageValue);
+  //       })
+  //       .catch(error => {
+  //         console.error("Error writing to the LED characteristic: ", error);
+  //         console.error(error);
+  //       });
+  //   }
+  // }, [messageValue]);
+
+  // Create a new helper function to write to BLE:
+const writeToBleCharacteristic = async (data: Uint8Array) => {
+  if (!webBluetooth.isConnected) {
+    console.warn('WebBluetooth is not connected, cannot write characteristic');
+    return;
+  }
+  
+  try {
+    await webBluetooth.writeCharacteristic(
+      "0000dfb0-0000-1000-8000-00805f9b34fb",
+      "0000dfb1-0000-1000-8000-00805f9b34fb",
+      data as BufferSource
+    );
+    console.log("Value written to LED characteristic:", data);
+  } catch (error) {
+    console.error("Error writing to the LED characteristic:", error);
+  }
+};
 
   console.log("Start GameServerProvider");
 
@@ -369,10 +389,12 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
       const encoder = new TextEncoder();
       const data = encoder.encode(currentLookUp[dataValue] as string);
         // update message data variable to activate write to device characteristic
-        setMessageValue(data);
+        // setMessageValue(data);
+         // Store in ref and write directly to BLE characteristic (no setState, no re-render)
+      messageValueRef.current = data;
+      writeToBleCharacteristic(data);
       }
-      
-    }
+    };
 
   const joinRoom = (roomId: number) => {
     // After the successful login, send the join Room request
