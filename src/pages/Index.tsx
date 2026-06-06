@@ -76,7 +76,7 @@ const Index = () => {
       {/* Main Content */}
       <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-64px)]">
         {/* Left Column - Control Panel */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           <ControlPanel
             protocolNames={Object.keys(protocolsData)}
             selectedProtocol={selectedProtocol}
@@ -87,7 +87,7 @@ const Index = () => {
         </div>
         
         {/* Middle Column - Camera Feed & Movement Control */}
-        <div className="space-y-4">
+        <div className="space-y-4 min-w-0">
           <CameraViewer 
             title="Main Camera Feed"
           />
@@ -95,7 +95,7 @@ const Index = () => {
         </div>
         
         {/* Right Column - Console & Room Management */}
-        <div className="space-y-4">         
+        <div className="space-y-4 min-w-0">
           <RoomSelect onRoomSelect={handleRoomSelect} selectedRoom={selectedRoom} />
           
           {selectedRoom ? (
