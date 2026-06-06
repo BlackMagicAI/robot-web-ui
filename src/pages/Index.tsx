@@ -69,12 +69,12 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen w-full max-w-full overflow-x-hidden bg-background">
       {/* Status Bar */}
       <StatusBar isConnected={isRobotConnected} />
       
       {/* Main Content */}
-      <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-64px)]">
+      <div className="grid h-auto min-h-[calc(100vh-64px)] w-full max-w-full grid-cols-1 gap-4 overflow-x-hidden p-3 sm:p-4 lg:h-[calc(100vh-64px)] lg:grid-cols-3">
         {/* Left Column - Control Panel */}
         <div className="space-y-4 min-w-0">
           <ControlPanel

@@ -44,24 +44,28 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
     return 'text-destructive';
   };
 
+  const buddyStatus = isBuddyConnected ? "CONNECTED" : "DISCONNECTED";
+  const serverStatus = isGameServerConnected ? "CONNECTED" : isGameServerConnecting ? "CONNECTING..." : "DISCONNECTED";
+
   return (
-    <div className="bg-card border-b border-border px-4 py-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="w-full max-w-full overflow-hidden border-b border-border bg-card px-3 py-2 sm:px-4">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-4">
           {/* Robot Connection Status */}
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
             {isBuddyConnected ? (
               <Wifi className="w-4 h-4 text-success" />
             ) : (
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
-            <Badge variant={isBuddyConnected ? "default" : "destructive"} className="text-xs">
-              BUDDY: {isBuddyConnected ? "CONNECTED" : "DISCONNECTED"}
+            <Badge variant={isBuddyConnected ? "default" : "destructive"} className="max-w-[4.7rem] truncate px-2 text-xs sm:max-w-none sm:px-2.5" title={`BUDDY: ${buddyStatus}`}>
+              <span className="sm:hidden">BUDDY</span>
+              <span className="hidden sm:inline">BUDDY: {buddyStatus}</span>
             </Badge>
           </div>
 
           {/* Game Server Connection Status */}
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
             {isGameServerConnected ? (
               <Wifi className="w-4 h-4 text-success" />
             ) : isGameServerConnecting ? (
@@ -71,9 +75,11 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
             )}
             <Badge
               variant={isGameServerConnected ? "default" : isGameServerConnecting ? "secondary" : "destructive"}
-              className="text-xs"
+              className="max-w-[5.2rem] truncate px-2 text-xs sm:max-w-none sm:px-2.5"
+              title={`SERVER: ${serverStatus}`}
             >
-              SERVER: {isGameServerConnected ? "CONNECTED" : isGameServerConnecting ? "CONNECTING..." : "DISCONNECTED"}
+              <span className="sm:hidden">SERVER</span>
+              <span className="hidden sm:inline">SERVER: {serverStatus}</span>
             </Badge>
           </div>
 
@@ -102,7 +108,7 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="hidden min-w-0 items-center gap-3 sm:flex sm:gap-4">
           {/* Position */}
           <div className="flex items-center gap-1">
             <MapPin className="w-4 h-4 text-muted-foreground" />

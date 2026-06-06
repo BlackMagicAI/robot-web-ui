@@ -113,6 +113,16 @@
 }
 
 @layer base {
+  html,
+  body,
+  #root {
+    @apply min-h-screen w-full max-w-full overflow-x-hidden;
+  }
+
+  body {
+    @apply m-0;
+  }
+
   * {
     @apply border-border;
   }
