@@ -200,9 +200,9 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
             <SelectTrigger className="h-8 w-full max-w-full text-xs">
               <SelectValue placeholder="Select webcam..." />
             </SelectTrigger>
-            <SelectContent className="max-w-[calc(100vw-1.5rem)]">
+            <SelectContent>
               {availableCameras.map((cam) => (
-                <SelectItem key={cam.deviceId} value={cam.deviceId} className="max-w-[calc(100vw-2rem)] truncate [&>span:last-child]:min-w-0 [&>span:last-child]:truncate">
+                <SelectItem key={cam.deviceId} value={cam.deviceId}>
                   {cam.label || `Camera ${cam.deviceId.slice(0, 8)}`}
                 </SelectItem>
               ))}
