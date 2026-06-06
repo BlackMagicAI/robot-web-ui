@@ -46,22 +46,22 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
 
   return (
     <div className="w-full max-w-full overflow-hidden border-b border-border bg-card px-3 py-2 sm:px-4">
-      <div className="flex min-w-0 items-center justify-between gap-2 overflow-x-auto">
-        <div className="flex min-w-0 shrink-0 items-center gap-3 sm:gap-4">
+      <div className="flex min-w-0 flex-wrap items-center justify-between gap-2">
+        <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2 sm:gap-4">
           {/* Robot Connection Status */}
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
             {isBuddyConnected ? (
               <Wifi className="w-4 h-4 text-success" />
             ) : (
               <WifiOff className="w-4 h-4 text-destructive" />
             )}
-            <Badge variant={isBuddyConnected ? "default" : "destructive"} className="text-xs">
+            <Badge variant={isBuddyConnected ? "default" : "destructive"} className="max-w-[9.5rem] truncate text-xs">
               BUDDY: {isBuddyConnected ? "CONNECTED" : "DISCONNECTED"}
             </Badge>
           </div>
 
           {/* Game Server Connection Status */}
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-1.5">
             {isGameServerConnected ? (
               <Wifi className="w-4 h-4 text-success" />
             ) : isGameServerConnecting ? (
@@ -71,7 +71,7 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
             )}
             <Badge
               variant={isGameServerConnected ? "default" : isGameServerConnecting ? "secondary" : "destructive"}
-              className="text-xs"
+              className="max-w-[10rem] truncate text-xs"
             >
               SERVER: {isGameServerConnected ? "CONNECTED" : isGameServerConnecting ? "CONNECTING..." : "DISCONNECTED"}
             </Badge>
@@ -102,7 +102,7 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
           </div>
         </div>
 
-        <div className="flex min-w-0 shrink-0 items-center gap-3 sm:gap-4">
+        <div className="hidden min-w-0 items-center gap-3 sm:flex sm:gap-4">
           {/* Position */}
           <div className="flex items-center gap-1">
             <MapPin className="w-4 h-4 text-muted-foreground" />
