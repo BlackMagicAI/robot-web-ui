@@ -45,9 +45,9 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
   };
 
   return (
-    <div className="bg-card border-b border-border px-4 py-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+    <div className="w-full max-w-full overflow-hidden border-b border-border bg-card px-3 py-2 sm:px-4">
+      <div className="flex min-w-0 items-center justify-between gap-2 overflow-x-auto">
+        <div className="flex min-w-0 shrink-0 items-center gap-3 sm:gap-4">
           {/* Robot Connection Status */}
           <div className="flex items-center gap-2">
             {isBuddyConnected ? (
@@ -102,7 +102,7 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex min-w-0 shrink-0 items-center gap-3 sm:gap-4">
           {/* Position */}
           <div className="flex items-center gap-1">
             <MapPin className="w-4 h-4 text-muted-foreground" />
