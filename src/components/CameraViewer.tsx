@@ -128,15 +128,15 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
   const isActive = cameraMode === 'robot' ? isConnected : cameraMode === 'webcam' ? isStreaming : isViewing;
 
   return (
-    <Card className="p-4 h-fit-content">
-      <div className="mb-4 space-y-2">
+    <Card className="h-fit w-full max-w-full overflow-hidden p-3 sm:p-4">
+      <div className="mb-4 min-w-0 space-y-2">
         <div className="flex items-center gap-2">
           <h3 className="font-medium">{title}</h3>
           <Badge variant={isActive ? "default" : "secondary"} className="text-xs">
             {isActive ? "LIVE" : "OFFLINE"}
           </Badge>
         </div>
-        <div className="flex items-center gap-1 flex-wrap">
+        <div className="flex min-w-0 max-w-full flex-wrap items-center gap-1 overflow-hidden">
           {/* Role toggle */}
           <div className="flex items-center gap-1.5 mr-2">
             <Bot className="w-3.5 h-3.5 text-muted-foreground" />
@@ -195,14 +195,14 @@ export const CameraViewer = ({ title = "Robot Camera" }: CameraViewerProps) => {
 
       {/* Webcam camera selector */}
       {cameraMode === 'webcam' && availableCameras.length > 0 && (
-        <div className="mb-3">
+        <div className="mb-3 min-w-0 max-w-full overflow-hidden">
           <Select value={selectedDeviceId || ''} onValueChange={(val) => selectCamera(val)}>
-            <SelectTrigger className="w-full text-xs h-8">
+            <SelectTrigger className="h-8 w-full max-w-full text-xs">
               <SelectValue placeholder="Select webcam..." />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent className="max-w-[calc(100vw-1.5rem)]">
               {availableCameras.map((cam) => (
-                <SelectItem key={cam.deviceId} value={cam.deviceId} className="max-w-[90vw] truncate">
+                <SelectItem key={cam.deviceId} value={cam.deviceId} className="max-w-[calc(100vw-2rem)] truncate [&>span:last-child]:min-w-0 [&>span:last-child]:truncate">
                   {cam.label || `Camera ${cam.deviceId.slice(0, 8)}`}
                 </SelectItem>
               ))}
