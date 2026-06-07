@@ -128,6 +128,11 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
           {/* User Account Menu */}
           <UserAccountMenu />
         </div>
+
+        {/* User Account Menu - mobile only (position/time hidden on mobile) */}
+        <div className="flex items-center sm:hidden">
+          <UserAccountMenu />
+        </div>
       </div>
     </div>
   );
