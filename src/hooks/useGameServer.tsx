@@ -78,10 +78,17 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
 
   const { guestRole, user } = useAuth();
   const guestRoleRef = useRef<string | null>(null);
+  // Store webBluetooth context in useRef to avoid stale closures
+  const webBluetoothRef = useRef<WebBluetoothContextType>(webBluetooth);
 
   useEffect(() => {
     guestRoleRef.current = guestRole;
   }, [guestRole]);
+
+   // Keep webBluetoothRef in sync with prop
+   useEffect(() => {
+    webBluetoothRef.current = webBluetooth;
+  }, [webBluetooth]);
 
   const setKvsHandshakePayload = (payload: KvsHandshakePayload | null) => {
     kvsHandshakePayloadRef.current = payload;
@@ -127,23 +134,25 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   // }, [messageValue]);
 
   // Create a new helper function to write to BLE:
-const writeToBleCharacteristic = async (data: Uint8Array) => {
-  if (!webBluetooth.isConnected) {
-    console.warn('WebBluetooth is not connected, cannot write characteristic');
-    return;
-  }
-  
-  try {
-    await webBluetooth.writeCharacteristic(
-      "0000dfb0-0000-1000-8000-00805f9b34fb",
-      "0000dfb1-0000-1000-8000-00805f9b34fb",
-      data as BufferSource
-    );
-    console.log("Value written to LED characteristic:", data);
-  } catch (error) {
-    console.error("Error writing to the LED characteristic:", error);
-  }
-};
+  const writeToBleCharacteristic = async (data: Uint8Array) => {
+    const currentWebBluetooth = webBluetoothRef.current;
+    
+    if (!currentWebBluetooth.isConnected) {
+      console.warn('WebBluetooth is not connected, cannot write characteristic');
+      return;
+    }
+    
+    try {
+      await currentWebBluetooth.writeCharacteristic(
+        "0000dfb0-0000-1000-8000-00805f9b34fb",
+        "0000dfb1-0000-1000-8000-00805f9b34fb",
+        data as BufferSource
+      );
+      // console.log("Value written to LED characteristic:", data);
+    } catch (error) {
+      console.error("Error writing to the LED characteristic:", error);
+    }
+  };
 
   console.log("Start GameServerProvider");
 
@@ -305,7 +314,7 @@ const writeToBleCharacteristic = async (data: Uint8Array) => {
     if (sfs && isGameServerConnected) {
       const message = JSON.stringify({ command, data });
       sfs.send(message);
-      console.log('Sent to game server:', { command, data });
+      // console.log('Sent to game server:', { command, data });
     } else {
       console.warn('Cannot send command: not connected to game server');
     }
@@ -384,7 +393,7 @@ const writeToBleCharacteristic = async (data: Uint8Array) => {
     // Access the current jsonCmdLookUp via ref (avoids stale closure)
     const currentLookUp = jsonCmdLookUpRef.current;
     if (currentLookUp) {
-      console.log("onBuddyMessage - jsonCmdLookUp available:", currentLookUp);
+      // console.log("onBuddyMessage - jsonCmdLookUp available:", currentLookUp);
       // You can now use currentLookUp to interpret or transform the command
       const encoder = new TextEncoder();
       const data = encoder.encode(currentLookUp[dataValue] as string);
