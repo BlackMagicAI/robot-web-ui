@@ -165,14 +165,14 @@ export const VirtualJoystick = ({ onMove, size = 150, jsonCmdLookUp, sendBuddyCo
   }, [isDragging, handleMouseMove, handleMouseUp, handleTouchMove, handleTouchEnd]);
 
   return (
-    <Card className="p-4">
+    <Card className="overflow-hidden p-3 sm:p-4">
       <div className="text-center mb-2">
         <h3 className="text-sm font-medium text-muted-foreground">Movement Control</h3>
       </div>
       <div
         ref={containerRef}
         className="relative mx-auto cursor-grab active:cursor-grabbing select-none"
-        style={{ width: size, height: size }}
+        style={{ width: `min(${size}px, calc(100vw - 4rem))`, height: `min(${size}px, calc(100vw - 4rem))`, maxWidth: size, maxHeight: size, aspectRatio: '1 / 1' }}
         onMouseDown={handleMouseDown}
         onTouchStart={handleTouchStart}
       >
