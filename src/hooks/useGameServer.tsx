@@ -170,7 +170,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     // Add event listeners
     sfs.addEventListener(SFS2X.SFSEvent.CONNECTION, onConnection, this);
     sfs.addEventListener(SFS2X.SFSEvent.CONNECTION_LOST, onConnectionLost, this);
-
+// update 1
     // sfs.LagMonitor.Start();
 
     // Add login-related event listeners during the SmartFox instance setup

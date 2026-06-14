@@ -18,7 +18,7 @@ export interface WebBluetoothContextType {
   unsubscribeFromNotifications: (serviceUuid: string, characteristicUuid: string) => Promise<boolean>;
   getCharacteristic: (serviceUuid: string, characteristicUuid: string) => Promise<BluetoothRemoteGATTCharacteristic | null>;
 }
-
+// update 1
 const WebBluetoothContext = createContext<WebBluetoothContextType | undefined>(undefined);
 
 export const useWebBluetooth = () => {
