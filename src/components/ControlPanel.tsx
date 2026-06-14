@@ -91,6 +91,7 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
         </div>
 
         {/* Emergency Controls */}
+        {guestRole !== 'operator' && (
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">Emergency</h4>
           <Button
@@ -102,8 +103,10 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
             EMERGENCY STOP
           </Button>
         </div>
+        )}
 
         {/* Connectivity */}
+        {guestRole !== 'operator' && (
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">Connectivity</h4>
           <Button
@@ -116,8 +119,10 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
             {isBleConnected ? "BLE Connected" : "BLE Connect"}
           </Button>
         </div>
+        )}
 
         {/* Protocol Selection */}
+        {guestRole !== 'operator' && (
         <div className="space-y-3">
           <h4 className="text-sm font-medium text-muted-foreground">Protocol</h4>
           <Select value={selectedProtocol} onValueChange={onProtocolChange} disabled={guestRole !== 'robot'}>
@@ -133,6 +138,7 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
             </SelectContent>
           </Select>
         </div>
+        )}
 
         {/* Mode Controls */}
         <div className="space-y-3">
