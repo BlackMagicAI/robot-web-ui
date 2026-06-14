@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useCallback, useMemo } from 'react';
 
 export interface WebBluetoothContextType {
   isConnected: boolean;
@@ -119,7 +119,7 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
     setCharacteristics(new Map());
   }, [gattServer]);
 
-  const getCharacteristic = async (serviceUuid: string, characteristicUuid: string): Promise<BluetoothRemoteGATTCharacteristic | null> => {
+  const getCharacteristic = useCallback(async (serviceUuid: string, characteristicUuid: string): Promise<BluetoothRemoteGATTCharacteristic | null> => {
     if (!gattServer || !gattServer.connected) {
       setConnectionError('Not connected to any device');
       return null;
@@ -144,7 +144,7 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
       setConnectionError(`Failed to get characteristic: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return null;
     }
-  };
+  }, [gattServer, characteristics]);
 
   const writeCharacteristic = useCallback(async (
     serviceUuid: string,
@@ -221,7 +221,7 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
     }
   }, [gattServer, characteristics]);
 
-  const value: WebBluetoothContextType = {
+  const value = useMemo<WebBluetoothContextType>(() => ({
     isConnected,
     isScanning,
     connectedDevice,
@@ -233,8 +233,21 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
     readCharacteristic,
     subscribeToNotifications,
     unsubscribeFromNotifications,
-    getCharacteristic
-  };
+    getCharacteristic,
+  }), [
+    isConnected,
+    isScanning,
+    connectedDevice,
+    connectionError,
+    scanForDevices,
+    connectToDevice,
+    disconnect,
+    writeCharacteristic,
+    readCharacteristic,
+    subscribeToNotifications,
+    unsubscribeFromNotifications,
+    getCharacteristic,
+  ]);
 
   return (
     <WebBluetoothContext.Provider value={value}>
