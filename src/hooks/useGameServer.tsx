@@ -172,7 +172,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     sfs.addEventListener(SFS2X.SFSEvent.CONNECTION_LOST, onConnectionLost, this);
 
     sfs.LagMonitor.Start();
-    
+
     // Add login-related event listeners during the SmartFox instance setup
     sfs.addEventListener(SFS2X.SFSEvent.LOGIN, onLogin, this);
     sfs.addEventListener(SFS2X.SFSEvent.LOGIN_ERROR, onLoginError, this);
@@ -222,7 +222,11 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
       sfs.disconnect;
       setSfs(null);
     }
-    // setIsConnected(false);
+    setIsGameServerConnected(false);
+    setIsGameServerConnecting(false);
+    setRooms(null);
+    setUserList(null);
+    setIsBuddyConnected(false);
     console.warn("Disconnection occurred; reason is: " + event.reason);
   }
 
