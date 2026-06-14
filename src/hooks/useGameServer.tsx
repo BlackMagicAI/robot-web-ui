@@ -220,7 +220,11 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
       sfs.disconnect;
       setSfs(null);
     }
-    //setIsConnected(false);
+    setIsGameServerConnected(false);
+    setIsGameServerConnecting(false);
+    setRooms(null);
+    setUserList(null);
+    setIsBuddyConnected(false);
     console.warn("Disconnection occurred; reason is: " + event.reason);
   }
 
