@@ -49,7 +49,7 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
       return;
     }
     let options = {
-      optionalServices: ["00001812-0000-1000-8000-00805f9b34fb", "0000dfb0-0000-1000-8000-00805f9b34fb"],
+      // optionalServices: ["00001812-0000-1000-8000-00805f9b34fb", "0000dfb0-0000-1000-8000-00805f9b34fb"],
       acceptAllDevices: true
     };
     const device = await scanForDevices(options);
