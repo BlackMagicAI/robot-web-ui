@@ -298,6 +298,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     var rmList = getRoomList();
     setRooms(rmList);
     sfs.send(new SFS2X.InitBuddyListRequest());
+    sfs.LagMonitor.Start();
   }
 
   function onLoginError(evt) {
