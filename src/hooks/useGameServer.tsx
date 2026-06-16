@@ -24,6 +24,8 @@ interface GameServerContextType {
   connectionError: string | null;
   connect: () => Promise<void>;
   disconnect: () => void;
+  showReconnect: boolean;
+  reconnect: () => void;
   sendCommand: (command: string, data?: any) => void;
   //loginGuest: () => void;
   rooms: SFSRoom[];
@@ -65,6 +67,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
   const [isGameServerConnecting, setIsGameServerConnecting] = useState(false);
   const [isBuddyConnected, setIsBuddyConnected] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [showReconnect, setShowReconnect] = useState(false);
   const [sfs, setSfs] = useState<SFS2X.SmartFox | null>(null);
   const [rooms, setRooms] = useState<SFSRoom[] | null>(null);
   const [userList, setUserList] = useState<SFS2X.SFSUser[] | null>(null);
@@ -204,6 +207,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
 
       setIsGameServerConnected(true);
       setIsGameServerConnecting(false);
+      setShowReconnect(false);
 
       // login
       loginGuest();
@@ -227,6 +231,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     setRooms(null);
     setUserList(null);
     setIsBuddyConnected(false);
+    setShowReconnect(true);
     console.warn("Disconnection occurred; reason is: " + event.reason);
   }
 
@@ -314,7 +319,15 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
       setRooms(null);
       setUserList(null);
       setIsBuddyConnected(false);
+      setShowReconnect(false);
     }
+  };
+
+  const reconnect = () => {
+    setShowReconnect(false);
+    // sfs is null after CONNECTION_LOST; the auto-init useEffect recreates it.
+    // Defer connect() so the new SmartFox instance is in state.
+    setTimeout(() => { connect(); }, 0);
   };
 
   const sendCommand = (command: string, data?: any) => {
@@ -437,6 +450,8 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     connectionError,
     connect,
     disconnect,
+    showReconnect,
+    reconnect,
     sendCommand,
     rooms,
     joinRoom,
