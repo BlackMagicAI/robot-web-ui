@@ -39,8 +39,31 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
   const [isSwitch2, setIsSwitch2] = useState(false);
 
   const { isGameServerConnected, sendBuddyCommand } = useGameServer();
-  const { isConnected: isBleConnected, scanForDevices, connectToDevice, disconnect } = useWebBluetooth();
+  const { isConnected: isBleConnected, scanForDevices, connectToDevice, disconnect, writeCharacteristic } = useWebBluetooth();
   const { guestRole } = useAuth();
+  const [isManual, setIsManual] = useState(false);
+
+  const BLE_SERVICE_UUID = "0000dfb0-0000-1000-8000-00805f9b34fb";
+  const BLE_CHAR_UUID = "0000dfb1-0000-1000-8000-00805f9b34fb";
+
+  const sendManualCommand = async (key: string) => {
+    if (!jsonCmdLookUp) {
+      console.warn('No protocol selected, cannot send manual command');
+      return;
+    }
+    const cmd = jsonCmdLookUp[key];
+    if (typeof cmd !== 'string') {
+      console.warn(`Manual command "${key}" not found in protocol`);
+      return;
+    }
+    if (!isBleConnected) {
+      console.warn('BLE not connected, cannot send manual command');
+      return;
+    }
+    const bytes = new Uint8Array(cmd.length);
+    for (let i = 0; i < cmd.length; i++) bytes[i] = cmd.charCodeAt(i) & 0xff;
+    await writeCharacteristic(BLE_SERVICE_UUID, BLE_CHAR_UUID, bytes);
+  };
 
   // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services
   const handleBleConnect = async () => {
@@ -60,6 +83,12 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
 
   const handleSwitch1 = (value) => {
     setIsSwitch1(value);
+    const key = value ? 'sw1On' : 'sw1Off';
+    if (isManual) {
+      console.log(`manual ${key}`);
+      sendManualCommand(key);
+      return;
+    }
     if (isGameServerConnected && value) {
       console.log("switch1-on");
       sendBuddyCommand("sw1", "sw1On"); //TODO: make constans
@@ -71,6 +100,12 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
 
   const handleSwitch2 = (value) => {
     setIsSwitch2(value);
+    const key = value ? 'sw2On' : 'sw2Off';
+    if (isManual) {
+      console.log(`manual ${key}`);
+      sendManualCommand(key);
+      return;
+    }
     if (isGameServerConnected && value) {
       console.log("switch2-on");
       sendBuddyCommand("sw2", "sw2On"); //TODO: make constans
@@ -88,6 +123,10 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
             <Settings className="w-4 h-4" />
             Control Panel
           </h3>
+          <div className="flex items-center justify-between">
+            <span className="text-sm">Manual</span>
+            <Switch checked={isManual} onCheckedChange={setIsManual} />
+          </div>
         </div>
 
         {/* Emergency Controls */}
