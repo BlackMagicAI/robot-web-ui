@@ -7,7 +7,8 @@ import {
   Signal,
   Clock,
   MapPin,
-  Thermometer
+  Thermometer,
+  PlugZap
 } from 'lucide-react';
 import { UserAccountMenu } from './UserAccountMenu';
 import { useGameServer } from '@/hooks/useGameServer';
@@ -17,7 +18,7 @@ interface StatusBarProps {
 }
 
 export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
-  const { isGameServerConnected, isGameServerConnecting, isBuddyConnected } = useGameServer();
+  const { isGameServerConnected, isGameServerConnecting, isBuddyConnected, connect } = useGameServer();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [battery] = useState(65);
   const [signal] = useState(85);
@@ -81,6 +82,17 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
               <span className="sm:hidden">SERVER</span>
               <span className="hidden sm:inline">SERVER: {serverStatus}</span>
             </Badge>
+            {!isGameServerConnected && !isGameServerConnecting && (
+              <button
+                type="button"
+                onClick={() => connect()}
+                title="Reconnect to game server"
+                aria-label="Reconnect to game server"
+                className="inline-flex items-center justify-center rounded p-1 text-destructive hover:bg-muted hover:text-foreground transition-colors"
+              >
+                <PlugZap className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Battery */}
