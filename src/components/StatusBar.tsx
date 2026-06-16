@@ -7,17 +7,20 @@ import {
   Signal,
   Clock,
   MapPin,
-  Thermometer
+  Thermometer,
+  Unplug,
 } from 'lucide-react';
 import { UserAccountMenu } from './UserAccountMenu';
 import { useGameServer } from '@/hooks/useGameServer';
+import { useAuth } from '@/hooks/useAuth';
 
 interface StatusBarProps {
   isConnected?: boolean;
 }
 
 export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
-  const { isGameServerConnected, isGameServerConnecting, isBuddyConnected } = useGameServer();
+  const { isGameServerConnected, isGameServerConnecting, isBuddyConnected, showReconnect, reconnect } = useGameServer();
+  const { user, isGuest } = useAuth();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [battery] = useState(65);
   const [signal] = useState(85);
@@ -81,6 +84,19 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
               <span className="sm:hidden">SERVER</span>
               <span className="hidden sm:inline">SERVER: {serverStatus}</span>
             </Badge>
+            {showReconnect && (
+              <button
+                type="button"
+                onClick={() => {
+                  if ((user || isGuest) && showReconnect) reconnect();
+                }}
+                title="Reconnect to game server"
+                aria-label="Reconnect to game server"
+                className="ml-1 inline-flex items-center justify-center rounded p-0.5 text-destructive hover:text-destructive/80 hover:bg-destructive/10 transition-colors"
+              >
+                <Unplug className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
           {/* Battery */}
