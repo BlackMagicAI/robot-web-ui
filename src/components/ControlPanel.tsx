@@ -123,10 +123,12 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
             <Settings className="w-4 h-4" />
             Control Panel
           </h3>
-          <div className="flex items-center justify-between">
-            <span className="text-sm">Manual</span>
-            <Switch checked={isManual} onCheckedChange={setIsManual} />
-          </div>
+          {guestRole === 'robot' && (
+            <div className="flex items-center justify-between">
+              <span className="text-sm">Manual</span>
+              <Switch checked={isManual} onCheckedChange={setIsManual} />
+            </div>
+          )}
         </div>
 
         {/* Emergency Controls */}
