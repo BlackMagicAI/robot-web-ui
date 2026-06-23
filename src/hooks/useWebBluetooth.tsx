@@ -155,7 +155,7 @@ export const WebBluetoothProvider: React.FC<WebBluetoothProviderProps> = ({ chil
 
     if (!characteristic) return false;
     try {
-      characteristic.writeValueWithoutResponse(value)
+      characteristic.writeValueWithoutResponse(value);
       return true;
     } catch (error) {
       setConnectionError(`Failed to write to characteristic: ${error instanceof Error ? error.message : 'Unknown error'}`);

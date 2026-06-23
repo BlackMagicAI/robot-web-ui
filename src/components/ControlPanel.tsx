@@ -73,7 +73,7 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
     }
     let options: RequestDeviceOptions = {
       acceptAllDevices: true,
-      optionalServices: [BLE_SERVICE_UUID, "00001812-0000-1000-8000-00805f9b34fb"],
+      optionalServices: [BLE_SERVICE_UUID, BLE_CHAR_UUID],
     };
     const device = await scanForDevices(options);
     if (device) {
