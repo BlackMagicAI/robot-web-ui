@@ -71,9 +71,9 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
       await disconnect();
       return;
     }
-    let options = {
-      // optionalServices: ["00001812-0000-1000-8000-00805f9b34fb", "0000dfb0-0000-1000-8000-00805f9b34fb"],
-      acceptAllDevices: true
+    let options: RequestDeviceOptions = {
+      acceptAllDevices: true,
+      optionalServices: [BLE_SERVICE_UUID, "00001812-0000-1000-8000-00805f9b34fb"],
     };
     const device = await scanForDevices(options);
     if (device) {
