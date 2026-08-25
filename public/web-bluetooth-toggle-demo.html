@@ -1,8 +1,9 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <!-- // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services -->
+    <!-- // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services -->
   <!-- Run locally on mac using: python3 -m http.server 8000 -->
+  <!-- Then goto: localhost:8000 -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Web Bluetooth Toggle Demo</title>
@@ -28,11 +29,13 @@
     }
     .switch.on { background: #2ecc71; }
     .switch.on .knob { left: calc(100% - (var(--h) - 3px)); transform: translateX(-3px); }
-    .controls { margin-top: 16px; display:flex; gap:12px; flex-wrap:wrap; }
+    .controls { margin-top: 16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
     label.small { font-size: .9rem; color:#555; }
     .note { font-size: .85rem; color:#666; margin-top:8px; }
     .config { margin-top: 12px; border:1px solid #eee; padding:10px; border-radius:6px; background:#fafafa; }
     .danger { color: #b31b1b; }
+    .text-send { display:flex; gap:8px; align-items:center; }
+    #textInput { min-width: 220px; flex:1; white-space: pre-wrap;}
   </style>
 </head>
 <body>
@@ -57,7 +60,7 @@
       <input type="text" id="charUuid" value="0000dfb1-0000-1000-8000-00805f9b34fb" style="flex:1" />
     </div>
     <div class="note">
-      Defaults shown are Nordic UART Service example (NUS). Change to match your device. The demo sends 0x01 on ON and 0x00 on OFF.
+      Defaults shown are Nordic UART Service example (NUS). Change to match your device. The demo sends 0x01 on ON and 0x00 on OFF. The text sender encodes text as UTF-8.
     </div>
   </div>
 
@@ -71,6 +74,13 @@
     <div style="margin-left:8px;">
       <div class="small">State: <span id="toggleState">OFF</span></div>
     </div>
+
+    <!-- New text input + send button -->
+    <div class="text-send" style="margin-left: 10px;">
+      <label class="small" for="textInput">Send text</label>
+      <input id="textInput" type="text" placeholder="Type message to send" style=" white-space: pre-line;"/>
+      <button id="sendBtn" disabled>Send</button>
+    </div>
   </div>
 
   <div class="status" id="status">Status: idle</div>
@@ -81,7 +91,6 @@
     // Bluetooth commands
     const sw1Off = "h0,0\n";
     const sw1On = "h1,0\n";
-
     // Devices map: id -> BluetoothDevice and extra metadata
     const devices = new Map();
     let connectedDevice = null;
@@ -99,6 +108,10 @@
     const toggleEl = document.getElementById('toggle');
     const toggleStateEl = document.getElementById('toggleState');
 
+    // New elements
+    const textInput = document.getElementById('textInput');
+    const sendBtn = document.getElementById('sendBtn');
+
     function logStatus(text) {
       statusEl.textContent = 'Status: ' + text;
       console.debug(text);
@@ -114,6 +127,9 @@
       disconnectBtn.disabled = !connectedDevice;
       toggleEl.style.opacity = connectedDevice ? '1' : '0.5';
       toggleEl.style.pointerEvents = connectedDevice ? 'auto' : 'none';
+      // enable send button only when connected and characteristic available
+      sendBtn.disabled = !connectedDevice || !writeCharacteristic;
+      textInput.disabled = !connectedDevice || !writeCharacteristic;
     }
 
     function addDeviceToList(device) {
@@ -133,10 +149,8 @@
       errorEl.textContent = '';
       try {
         const serviceUuid = serviceInput.value.trim() || undefined;
-        // navigator.bluetooth.requestDevice requires a user gesture
         logStatus('Requesting device via browser chooser...');
         const filters = serviceUuid ? [{services: [serviceUuid]}] : [];
-        // Use acceptAllDevices as a fallback if no filter provided. If you have a known service, set it to avoid broad permissions.
         const options = filters.length ? {filters} : {acceptAllDevices: true, optionalServices: serviceUuid ? [serviceUuid] : []};
         const device = await navigator.bluetooth.requestDevice(options);
         addDeviceToList(device);
@@ -156,12 +170,10 @@
 
       try {
         logStatus('Connecting to ' + (device.name || device.id) + ' ...');
-        // Connect GATT
         gattServer = await device.gatt.connect();
         connectedDevice = device;
-        // handle disconnects
         device.addEventListener('gattserverdisconnected', onDisconnected);
-        // Get service & characteristic
+
         const serviceUuid = serviceInput.value.trim();
         const charUuid = charInput.value.trim();
         if (!serviceUuid || !charUuid) {
@@ -213,7 +225,6 @@
     // Toggle UI handling
     let toggleOn = false;
     toggleEl.addEventListener('click', async () => {
-      // toggle only works when device connected and characteristic available
       if (!writeCharacteristic) {
         showError('Not connected or characteristic not available.');
         return;
@@ -223,16 +234,13 @@
       toggleEl.setAttribute('aria-pressed', toggleOn ? 'true' : 'false');
       toggleStateEl.textContent = toggleOn ? 'ON' : 'OFF';
       errorEl.textContent = '';
-      // Send a simple byte: 0x01 for ON, 0x00 for OFF
       // const payload = new Uint8Array([ toggleOn ? 0x01 : 0x00 ]);
-
       // create string command istead of byte
       var sw1 = toggleOn ? sw1On:sw1Off;
       const encoder = new TextEncoder();
       const data = encoder.encode(sw1);
-
       try {
-        logStatus('Writing ' + (toggleOn ? '0x01' : '0x00') + ' to device...');
+        logStatus('Writing ' + data + ' to device...');
         // await writeCharacteristic.writeValue(payload);
         await writeCharacteristic.writeValue(data);
         logStatus('Write complete.');
@@ -243,6 +251,40 @@
         toggleEl.classList.toggle('on', toggleOn);
         toggleEl.setAttribute('aria-pressed', toggleOn ? 'true' : 'false');
         toggleStateEl.textContent = toggleOn ? 'ON' : 'OFF';
+      }
+    });
+
+    // Text send handling (new)
+    async function sendText() {
+      errorEl.textContent = '';
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      const text = textInput.value || '';
+      if (!text) return showError('Enter text to send.');
+      logStatus('Writing text -1 (' + text + ') ...');
+      try {
+        const formattedText = text.replace(/\r?\\n/g, String.fromCharCode(10));//hack to prevent input field from stripping newlines
+        const encoder = new TextEncoder();
+        const data = encoder.encode(formattedText); // UTF-8
+        logStatus('Writing text (' + data + ') ...');
+        await writeCharacteristic.writeValue(data);
+        logStatus('Text write complete.');
+      } catch (err) {
+        showError('Text write failed: ' + (err && err.message));
+      }
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      await sendText();
+    });
+
+    // allow Enter in the text input to send
+    textInput.addEventListener('keydown', async (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        await sendText();
       }
     });
 
