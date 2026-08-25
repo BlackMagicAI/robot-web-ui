@@ -7,6 +7,7 @@ import { StatusBar } from '@/components/StatusBar';
 import { RoomSelect, type Room } from '@/components/RoomSelect';
 import { RoomParticipants } from '@/components/RoomParticipants';
 import { useGameServer } from '@/hooks/useGameServer';
+import { useWebBluetooth } from '@/hooks/useWebBluetooth';
 
 interface JoystickData {
   x: number;
@@ -22,7 +23,12 @@ const Index = () => {
   const [selectedRoom, setSelectedRoom] = useState<Room | undefined>();
   const [protocolsData, setProtocolsData] = useState<Record<string, JsonCmdLookUp>>({});
   const [selectedProtocol, setSelectedProtocol] = useState<string>('');
+  const [isManual, setIsManual] = useState(false);
   const { setJsonCmdLookUp, sendBuddyCommand, isGameServerConnected } = useGameServer();
+  const { isConnected: isBleConnected, writeCharacteristic } = useWebBluetooth();
+
+  const BLE_SERVICE_UUID = "0000dfb0-0000-1000-8000-00805f9b34fb";
+  const BLE_CHAR_UUID = "0000dfb1-0000-1000-8000-00805f9b34fb";
 
   useEffect(() => {
     if (!isGameServerConnected) {
@@ -44,24 +50,22 @@ const Index = () => {
   }, []);
 
   const handleJoystickMove = (data: JoystickData) => {
-    // In a real application, you would send this data to your robot control API
-    if(data.angle >= 45 && data.angle <= 135 && data.distance > .75){
-      console.log("Forward");
-      sendBuddyCommand("fwd", "forward"); //TODO: make constans
-    } else if(data.angle < 225 && data.angle > 135 && data.distance > .75){
-      console.log("Left");
-      sendBuddyCommand("left", "left"); //TODO: make constans
-    } else if((data.angle < 45 || data.angle > 320) && data.distance > .75){
-      console.log("right");
-      sendBuddyCommand("right", "right"); //TODO: make constans
-    } else if(data.angle >= 225 && data.angle <= 320 && data.distance > .75){
-      console.log("backwards");
-      sendBuddyCommand("backwards", "backwards"); //TODO: make constans
-    } else{
-      console.log("Stop");
-      sendBuddyCommand("stop", "stop"); //TODO: make constans
+    let cmdKey = 'stop';
+    if (data.angle >= 45 && data.angle <= 135 && data.distance > .75) cmdKey = 'forward';
+    else if (data.angle < 225 && data.angle > 135 && data.distance > .75) cmdKey = 'left';
+    else if ((data.angle < 45 || data.angle > 320) && data.distance > .75) cmdKey = 'right';
+    else if (data.angle >= 225 && data.angle <= 320 && data.distance > .75) cmdKey = 'backwards';
+
+    if (isManual) {
+      if (!jsonCmdLookUp || !isBleConnected) return;
+      const cmd = jsonCmdLookUp[cmdKey];
+      if (typeof cmd !== 'string') return;
+      const bytes = new Uint8Array(cmd.length);
+      for (let i = 0; i < cmd.length; i++) bytes[i] = cmd.charCodeAt(i) & 0xff;
+      writeCharacteristic(BLE_SERVICE_UUID, BLE_CHAR_UUID, bytes);
+      return;
     }
-    console.log('Joystick moved:', data);
+    sendBuddyCommand(cmdKey, cmdKey);
   };
 
   const handleRoomSelect = (room: Room) => {
@@ -82,6 +86,8 @@ const Index = () => {
             selectedProtocol={selectedProtocol}
             onProtocolChange={setSelectedProtocol}
             jsonCmdLookUp={jsonCmdLookUp}
+            isManual={isManual}
+            onManualChange={setIsManual}
           />
           <MessagePanel />
         </div>

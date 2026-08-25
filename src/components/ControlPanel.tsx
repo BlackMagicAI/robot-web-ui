@@ -29,9 +29,11 @@ interface ControlPanelProps {
   selectedProtocol: string;
   onProtocolChange: (value: string) => void;
   jsonCmdLookUp: JsonCmdLookUp | null;
+  isManual?: boolean;
+  onManualChange?: (value: boolean) => void;
 }
 
-export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange, jsonCmdLookUp }: ControlPanelProps) => {
+export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange, jsonCmdLookUp, isManual: isManualProp, onManualChange }: ControlPanelProps) => {
   const [speed, setSpeed] = useState([50]);
   const [power, setPower] = useState([75]);
   const [sensitivity, setSensitivity] = useState([60]);
@@ -41,7 +43,12 @@ export const ControlPanel = ({ protocolNames, selectedProtocol, onProtocolChange
   const { isGameServerConnected, sendBuddyCommand } = useGameServer();
   const { isConnected: isBleConnected, scanForDevices, connectToDevice, disconnect, writeCharacteristic } = useWebBluetooth();
   const { guestRole } = useAuth();
-  const [isManual, setIsManual] = useState(false);
+  const [isManualLocal, setIsManualLocal] = useState(false);
+  const isManual = isManualProp ?? isManualLocal;
+  const setIsManual = (v: boolean) => {
+    setIsManualLocal(v);
+    onManualChange?.(v);
+  };
 
   const BLE_SERVICE_UUID = "0000dfb0-0000-1000-8000-00805f9b34fb";
   const BLE_CHAR_UUID = "0000dfb1-0000-1000-8000-00805f9b34fb";
