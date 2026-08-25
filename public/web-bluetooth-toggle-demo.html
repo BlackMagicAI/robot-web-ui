@@ -6,7 +6,7 @@
   <!-- Then goto: localhost:8000 -->
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Web Bluetooth Toggle Demo</title>
+  <title>Web Bluetooth Toggle & Joystick Demo</title>
   <style>
     body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 20px; max-width: 720px; margin: auto; }
     h1 { font-size: 1.2rem; margin-bottom: 8px; }
@@ -36,6 +36,28 @@
     .danger { color: #b31b1b; }
     .text-send { display:flex; gap:8px; align-items:center; }
     #textInput { min-width: 220px; flex:1; white-space: pre-wrap;}
+    /* Joystick styles */
+    .joystick-wrap { display:flex; gap:16px; align-items:center; }
+    .joystick {
+      width: 180px; height: 180px; border-radius: 50%;
+      background: linear-gradient(180deg,#fafafa,#eee);
+      border: 1px solid #ddd; position: relative; touch-action: none;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .stick {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: radial-gradient(circle,#f6f5f7,#0062ff);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%,-50%); transition: transform 120ms ease;
+      display:flex; align-items:center; justify-content:center; user-select:none;
+    }
+    .joy-output { display:flex; flex-direction:column; gap:6px; min-width:180px; }
+    .joy-output .row { display:flex; gap:8px; align-items:center; }
+    .joy-value { font-weight:600; min-width:64px; text-align:right; }
+    .small-muted { font-size: .85rem; color: #666; }
+    .controls-block { border:1px solid #eee; padding:12px; border-radius:6px; background:#fff; }    
   </style>
 </head>
 <body>
@@ -83,6 +105,21 @@
     </div>
   </div>
 
+    <!-- Joystick area -->
+    <div class="controls-block" style="display:flex; flex-direction:column; gap:10px;">
+      <label class="small">Virtual Joystick</label>
+      <div class="joystick-wrap">
+        <div id="joystick" class="joystick" aria-label="Virtual joystick">
+          <div id="stick" class="stick" role="slider" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="joy-output">
+          <div class="row"><div class="small-muted">Angle:</div><div id="joyAngle" class="joy-value">—</div><div class="small-muted">deg</div></div>
+          <div class="row"><div class="small-muted">Radius:</div><div id="joyRadius" class="joy-value">—</div><div class="small-muted">%</div></div>
+          <div class="small-muted">Tip: drag inside the circle (mouse or touch). Release to return to center.</div>
+        </div>
+      </div>
+    </div>
+
   <div class="status" id="status">Status: idle</div>
   <div class="note">You must run this page from a secure origin (https or http://localhost). Browser will show a chooser for scanning.</div>
   <div class="note danger" id="error"></div>
@@ -91,6 +128,8 @@
     // Bluetooth commands
     const sw1Off = "h0,0\n";
     const sw1On = "h1,0\n";
+    let cmdKeyPast = 'stop';
+    let isWriting = false;
     // Devices map: id -> BluetoothDevice and extra metadata
     const devices = new Map();
     let connectedDevice = null;
@@ -111,6 +150,12 @@
     // New elements
     const textInput = document.getElementById('textInput');
     const sendBtn = document.getElementById('sendBtn');
+
+    // Joystick elements
+    const joystick = document.getElementById('joystick');
+    const stick = document.getElementById('stick');
+    const joyAngleEl = document.getElementById('joyAngle');
+    const joyRadiusEl = document.getElementById('joyRadius');
 
     function logStatus(text) {
       statusEl.textContent = 'Status: ' + text;
@@ -311,6 +356,165 @@
     if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
       showError('Web Bluetooth requires a secure context. Run over https or from http://localhost.');
     }
+
+    // -------------------------
+    // Virtual joystick logic
+    // -------------------------
+    let activePointerId = null;
+    let maxRadius = 1; // px, will be set after measuring
+    let center = { x: 0, y: 0 };
+    let returning = false;
+
+    function measureJoystick() {
+      const rect = joystick.getBoundingClientRect();
+      center.x = rect.width / 2;
+      center.y = rect.height / 2;
+      // maximum distance the stick center can move from center (keep inside container)
+      maxRadius = Math.min(rect.width, rect.height) / 2 - Math.max(stick.offsetWidth, stick.offsetHeight) / 2 - 4;
+    }
+
+    function updateJoystickDisplay(dx, dy) {
+      // dx, dy are pixels relative to center, already clamped to maxRadius
+      stick.style.transition = 'transform 0s';
+      stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const radius = (dist/maxRadius);
+      const radiusPct = Math.min(100, radius * 100);
+      // angle: 0 = right, 90 = up. We flip y (screen y grows down).
+      const angleRad = Math.atan2(-dy, dx);
+      let angleDeg = (angleRad * 180 / Math.PI + 360) % 360;
+      if (isNaN(angleDeg)) angleDeg = 0;
+
+      joyAngleEl.textContent = angleDeg.toFixed(1);
+      joyRadiusEl.textContent = radiusPct.toFixed(1);
+
+      handleJoystickMove(angleDeg.toFixed(1), Math.min(1, radius));
+    }
+
+    async function handleJoystickMove (angle, distance) {
+
+    if (isWriting) {
+      console.warn("GATT operation in progress. Command ignored");
+      return; 
+    }
+    let cmdKey = 'stop';
+    let cmd = '';
+    if (angle >= 45 && angle <= 135 && distance > .75) cmdKey = 'forward';
+    else if (angle < 225 && angle > 135 && distance > .75) cmdKey = 'left';
+    else if ((angle < 45 || angle > 320) && distance > .75) cmdKey = 'right';
+    else if (angle >= 225 && angle <= 320 && distance > .75) cmdKey = 'backwards';
+
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      switch (cmdKey) {
+        case 'forward':
+          cmd = 'e180,0\nf0,0\n';
+          break;
+        case 'left':
+          cmd = 'e0,0\nf0,0\n';
+          break;
+        case 'right':
+          cmd = 'e0,0\nf0,0\n';
+          break;
+        case 'backwards':
+          cmd = 'e0,0\nf180,0\n';
+          break;          
+        default:
+          // Code runs if no cases match
+          cmd = "e90,0\nf90,0\n";
+      }
+      if(cmdKeyPast !== cmdKey){
+        const encoder = new TextEncoder();
+        const data = encoder.encode(cmd); // UTF-8
+        try {
+          isWriting = true;
+          const encoder = new TextEncoder();
+          const data = encoder.encode(cmd);
+          await writeCharacteristic.writeValue(data);
+        } catch (error) {
+          console.error("Write failed:", error);
+        } finally {
+          isWriting = false; // Always clears the lock, even if it errors
+        }
+      }
+      cmdKeyPast = cmdKey;
+    };
+
+    function resetJoystickToCenter(animated = true) {
+      returning = true;
+      if (animated) {
+        stick.style.transition = 'transform 140ms ease';
+      } else {
+        stick.style.transition = 'transform 0s';
+      }
+      stick.style.transform = 'translate(-50%,-50%)';
+      joyAngleEl.textContent = '0.0';
+      joyRadiusEl.textContent = '0.0';
+      // after animation ends, clear returning flag
+      setTimeout(() => { returning = false; }, 160);
+    }
+
+    // Pointer handlers
+    joystick.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      joystick.setPointerCapture(ev.pointerId);
+      activePointerId = ev.pointerId;
+      measureJoystick();
+      handlePointerMove(ev.clientX, ev.clientY);
+    });
+
+    joystick.addEventListener('pointermove', (ev) => {
+      if (activePointerId !== ev.pointerId) return;
+      ev.preventDefault();
+      handlePointerMove(ev.clientX, ev.clientY);
+    });
+
+    function handlePointerMove(clientX, clientY) {
+      const rect = joystick.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      let dx = x - center.x;
+      let dy = y - center.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > maxRadius) {
+        const scale = maxRadius / dist;
+        dx *= scale;
+        dy *= scale;
+      }
+      updateJoystickDisplay(dx, dy);
+    }
+
+    function pointerUpCleanup(ev) {
+      if (activePointerId === null) return;
+      if (ev && ev.pointerId !== activePointerId) return;
+      try {
+        joystick.releasePointerCapture(activePointerId);
+      } catch (e) {}
+      activePointerId = null;
+      // animate back to center
+      resetJoystickToCenter(true);
+    }
+
+    joystick.addEventListener('pointerup', pointerUpCleanup);
+    joystick.addEventListener('pointercancel', pointerUpCleanup);
+    joystick.addEventListener('pointerleave', (ev) => {
+      // If we are dragging and pointer leaves, still return to center on pointerup.
+      if (activePointerId === ev.pointerId) {
+        pointerUpCleanup(ev);
+      }
+    });
+
+    // Make sure the joystick re-measures on resize
+    window.addEventListener('resize', measureJoystick);
+    // initial measure
+    setTimeout(measureJoystick, 50);
+
+    // set initial output
+    joyAngleEl.textContent = '0.0';
+    joyRadiusEl.textContent = '0.0';    
   </script>
 </body>
 </html>
