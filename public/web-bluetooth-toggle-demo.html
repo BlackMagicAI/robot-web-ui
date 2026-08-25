@@ -1,0 +1,274 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <!-- // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services -->
+  <!-- Run locally on mac using: python3 -m http.server 8000 -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Web Bluetooth Toggle Demo</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 20px; max-width: 720px; margin: auto; }
+    h1 { font-size: 1.2rem; margin-bottom: 8px; }
+    .row { display:flex; gap:10px; align-items:center; margin: 10px 0; }
+    select, input[type="text"], button { padding: 8px; font-size: 0.95rem; }
+    .status { margin-top: 10px; color: #333; }
+    .switch {
+      --w: 56px; --h: 30px;
+      width: var(--w); height: var(--h); border-radius: var(--h);
+      background: #ddd; position: relative; cursor: pointer;
+      transition: background .12s;
+      display:inline-block;
+    }
+    .knob {
+      width: calc(var(--h) - 6px); height: calc(var(--h) - 6px);
+      background: white; border-radius: 50%;
+      position: absolute; top: 3px; left: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+      transition: left .12s, transform .12s;
+    }
+    .switch.on { background: #2ecc71; }
+    .switch.on .knob { left: calc(100% - (var(--h) - 3px)); transform: translateX(-3px); }
+    .controls { margin-top: 16px; display:flex; gap:12px; flex-wrap:wrap; }
+    label.small { font-size: .9rem; color:#555; }
+    .note { font-size: .85rem; color:#666; margin-top:8px; }
+    .config { margin-top: 12px; border:1px solid #eee; padding:10px; border-radius:6px; background:#fafafa; }
+    .danger { color: #b31b1b; }
+  </style>
+</head>
+<body>
+  <h1>Web Bluetooth Toggle Demo</h1>
+
+  <div class="row">
+    <button id="scanBtn">Scan / Add device</button>
+    <select id="deviceSelect" size="1" style="min-width:220px;">
+      <option value="">-- No device added --</option>
+    </select>
+    <button id="connectBtn" disabled>Connect</button>
+    <button id="disconnectBtn" disabled>Disconnect</button>
+  </div>
+
+  <div class="config">
+    <div class="row">
+      <label class="small">Service UUID</label>
+      <input type="text" id="serviceUuid" value="0000dfb0-0000-1000-8000-00805f9b34fb" style="flex:1" />
+    </div>
+    <div class="row">
+      <label class="small">Write Characteristic UUID</label>
+      <input type="text" id="charUuid" value="0000dfb1-0000-1000-8000-00805f9b34fb" style="flex:1" />
+    </div>
+    <div class="note">
+      Defaults shown are Nordic UART Service example (NUS). Change to match your device. The demo sends 0x01 on ON and 0x00 on OFF.
+    </div>
+  </div>
+
+  <div class="controls">
+    <div>
+      <label class="small">Toggle Output</label>
+      <div id="toggle" class="switch" aria-pressed="false" title="Toggle output (requires device connection)">
+        <div class="knob"></div>
+      </div>
+    </div>
+    <div style="margin-left:8px;">
+      <div class="small">State: <span id="toggleState">OFF</span></div>
+    </div>
+  </div>
+
+  <div class="status" id="status">Status: idle</div>
+  <div class="note">You must run this page from a secure origin (https or http://localhost). Browser will show a chooser for scanning.</div>
+  <div class="note danger" id="error"></div>
+
+  <script>
+    // Bluetooth commands
+    const sw1Off = "h0,0\n";
+    const sw1On = "h1,0\n";
+
+    // Devices map: id -> BluetoothDevice and extra metadata
+    const devices = new Map();
+    let connectedDevice = null;
+    let gattServer = null;
+    let writeCharacteristic = null;
+
+    const scanBtn = document.getElementById('scanBtn');
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const deviceSelect = document.getElementById('deviceSelect');
+    const serviceInput = document.getElementById('serviceUuid');
+    const charInput = document.getElementById('charUuid');
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+    const toggleEl = document.getElementById('toggle');
+    const toggleStateEl = document.getElementById('toggleState');
+
+    function logStatus(text) {
+      statusEl.textContent = 'Status: ' + text;
+      console.debug(text);
+    }
+    function showError(text) {
+      errorEl.textContent = text || '';
+      console.error(text);
+    }
+
+    function updateUI() {
+      const hasSelection = !!deviceSelect.value;
+      connectBtn.disabled = !hasSelection;
+      disconnectBtn.disabled = !connectedDevice;
+      toggleEl.style.opacity = connectedDevice ? '1' : '0.5';
+      toggleEl.style.pointerEvents = connectedDevice ? 'auto' : 'none';
+    }
+
+    function addDeviceToList(device) {
+      if (!device) return;
+      if (devices.has(device.id)) return;
+      devices.set(device.id, device);
+      const opt = document.createElement('option');
+      opt.value = device.id;
+      opt.textContent = device.name || device.id;
+      deviceSelect.appendChild(opt);
+      deviceSelect.value = device.id;
+      updateUI();
+    }
+
+    // "Scan / Add device" click: open chooser and add selected device to dropdown
+    scanBtn.addEventListener('click', async () => {
+      errorEl.textContent = '';
+      try {
+        const serviceUuid = serviceInput.value.trim() || undefined;
+        // navigator.bluetooth.requestDevice requires a user gesture
+        logStatus('Requesting device via browser chooser...');
+        const filters = serviceUuid ? [{services: [serviceUuid]}] : [];
+        // Use acceptAllDevices as a fallback if no filter provided. If you have a known service, set it to avoid broad permissions.
+        const options = filters.length ? {filters} : {acceptAllDevices: true, optionalServices: serviceUuid ? [serviceUuid] : []};
+        const device = await navigator.bluetooth.requestDevice(options);
+        addDeviceToList(device);
+        logStatus('Device added: ' + (device.name || device.id));
+      } catch (err) {
+        showError('Scan cancelled or failed: ' + (err && err.message));
+        logStatus('idle');
+      }
+    });
+
+    connectBtn.addEventListener('click', async () => {
+      errorEl.textContent = '';
+      const selectedId = deviceSelect.value;
+      if (!selectedId) return showError('Select a device first.');
+      const device = devices.get(selectedId);
+      if (!device) return showError('Device not found in list.');
+
+      try {
+        logStatus('Connecting to ' + (device.name || device.id) + ' ...');
+        // Connect GATT
+        gattServer = await device.gatt.connect();
+        connectedDevice = device;
+        // handle disconnects
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+        // Get service & characteristic
+        const serviceUuid = serviceInput.value.trim();
+        const charUuid = charInput.value.trim();
+        if (!serviceUuid || !charUuid) {
+          showError('Service and Characteristic UUIDs must be set to get the write characteristic.');
+          updateUI();
+          return;
+        }
+        logStatus('Getting primary service ' + serviceUuid + ' ...');
+        const service = await gattServer.getPrimaryService(serviceUuid);
+        logStatus('Getting characteristic ' + charUuid + ' ...');
+        writeCharacteristic = await service.getCharacteristic(charUuid);
+        logStatus('Connected and characteristic obtained.');
+        updateUI();
+      } catch (err) {
+        showError('Connection failed: ' + (err && err.message));
+        logStatus('idle');
+      }
+    });
+
+    disconnectBtn.addEventListener('click', async () => {
+      if (!connectedDevice) return;
+      try {
+        logStatus('Disconnecting...');
+        connectedDevice.gatt.disconnect();
+      } catch (err) {
+        console.warn('Error during disconnect', err);
+      } finally {
+        cleanupConnection();
+        logStatus('idle');
+      }
+    });
+
+    function onDisconnected(evt) {
+      showError('Device disconnected.');
+      cleanupConnection();
+      updateUI();
+    }
+
+    function cleanupConnection() {
+      writeCharacteristic = null;
+      gattServer = null;
+      if (connectedDevice) {
+        try { connectedDevice.removeEventListener('gattserverdisconnected', onDisconnected); } catch {}
+      }
+      connectedDevice = null;
+      updateUI();
+    }
+
+    // Toggle UI handling
+    let toggleOn = false;
+    toggleEl.addEventListener('click', async () => {
+      // toggle only works when device connected and characteristic available
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      toggleOn = !toggleOn;
+      toggleEl.classList.toggle('on', toggleOn);
+      toggleEl.setAttribute('aria-pressed', toggleOn ? 'true' : 'false');
+      toggleStateEl.textContent = toggleOn ? 'ON' : 'OFF';
+      errorEl.textContent = '';
+      // Send a simple byte: 0x01 for ON, 0x00 for OFF
+      // const payload = new Uint8Array([ toggleOn ? 0x01 : 0x00 ]);
+
+      // create string command istead of byte
+      var sw1 = toggleOn ? sw1On:sw1Off;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(sw1);
+
+      try {
+        logStatus('Writing ' + (toggleOn ? '0x01' : '0x00') + ' to device...');
+        // await writeCharacteristic.writeValue(payload);
+        await writeCharacteristic.writeValue(data);
+        logStatus('Write complete.');
+      } catch (err) {
+        showError('Write failed: ' + (err && err.message));
+        // revert toggle on failure
+        toggleOn = !toggleOn;
+        toggleEl.classList.toggle('on', toggleOn);
+        toggleEl.setAttribute('aria-pressed', toggleOn ? 'true' : 'false');
+        toggleStateEl.textContent = toggleOn ? 'ON' : 'OFF';
+      }
+    });
+
+    // Populate from navigator.bluetooth.getDevices() if available (previously authorized)
+    async function loadPreviouslyAllowedDevices() {
+      if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
+      try {
+        const prev = await navigator.bluetooth.getDevices();
+        for (const d of prev) addDeviceToList(d);
+        if (prev.length) logStatus('Loaded previously authorized devices.');
+      } catch (err) {
+        console.debug('getDevices not available or failed:', err);
+      }
+    }
+
+    // Keep UI updated when selection changes
+    deviceSelect.addEventListener('change', () => updateUI());
+
+    // init
+    updateUI();
+    loadPreviouslyAllowedDevices();
+
+    // Helpful note: ensure page runs over secure origin
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      showError('Web Bluetooth requires a secure context. Run over https or from http://localhost.');
+    }
+  </script>
+</body>
+</html>
