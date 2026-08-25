@@ -61,7 +61,7 @@
   </style>
 </head>
 <body>
-  <h1>Web Bluetooth Toggle Demo</h1>
+  <h1>Web Bluetooth Demo</h1>
 
   <div class="row">
     <button id="scanBtn">Scan / Add device</button>
@@ -88,14 +88,23 @@
 
   <div class="controls">
     <div>
-      <label class="small">Toggle Output</label>
-      <div id="toggle" class="switch" aria-pressed="false" title="Toggle output (requires device connection)">
+      <label class="small">Toggle Output 1</label>
+      <div id="toggle1" class="switch" aria-pressed="false" title="Toggle output (requires device connection)">
         <div class="knob"></div>
       </div>
     </div>
     <div style="margin-left:8px;">
-      <div class="small">State: <span id="toggleState">OFF</span></div>
+      <div class="small">State: <span id="toggleState1">OFF</span></div>
     </div>
+    <div>
+      <label class="small">Toggle Output 2</label>
+      <div id="toggle2" class="switch" aria-pressed="false" title="Toggle output (requires device connection)">
+        <div class="knob"></div>
+      </div>
+    </div>
+    <div style="margin-left:8px;">
+      <div class="small">State: <span id="toggleState2">OFF</span></div>
+    </div> 
 
     <!-- New text input + send button -->
     <div class="text-send" style="margin-left: 10px;">
@@ -128,6 +137,8 @@
     // Bluetooth commands
     const sw1Off = "h0,0\n";
     const sw1On = "h1,0\n";
+    const sw2Off = "i0,0\n";
+    const sw2On = "i1,0\n";
     let cmdKeyPast = 'stop';
     let isWriting = false;
     // Devices map: id -> BluetoothDevice and extra metadata
@@ -144,8 +155,10 @@
     const charInput = document.getElementById('charUuid');
     const statusEl = document.getElementById('status');
     const errorEl = document.getElementById('error');
-    const toggleEl = document.getElementById('toggle');
-    const toggleStateEl = document.getElementById('toggleState');
+    const toggleEl1 = document.getElementById('toggle1');
+    const toggleStateEl1 = document.getElementById('toggleState1');
+    const toggleEl2 = document.getElementById('toggle2');
+    const toggleStateEl2 = document.getElementById('toggleState2');
 
     // New elements
     const textInput = document.getElementById('textInput');
@@ -170,8 +183,10 @@
       const hasSelection = !!deviceSelect.value;
       connectBtn.disabled = !hasSelection;
       disconnectBtn.disabled = !connectedDevice;
-      toggleEl.style.opacity = connectedDevice ? '1' : '0.5';
-      toggleEl.style.pointerEvents = connectedDevice ? 'auto' : 'none';
+      toggleEl1.style.opacity = connectedDevice ? '1' : '0.5';
+      toggleEl1.style.pointerEvents = connectedDevice ? 'auto' : 'none';
+      toggleEl2.style.opacity = connectedDevice ? '1' : '0.5';
+      toggleEl2.style.pointerEvents = connectedDevice ? 'auto' : 'none';
       // enable send button only when connected and characteristic available
       sendBtn.disabled = !connectedDevice || !writeCharacteristic;
       textInput.disabled = !connectedDevice || !writeCharacteristic;
@@ -268,20 +283,20 @@
     }
 
     // Toggle UI handling
-    let toggleOn = false;
-    toggleEl.addEventListener('click', async () => {
+    let toggleOn1 = false;
+    toggleEl1.addEventListener('click', async () => {
       if (!writeCharacteristic) {
         showError('Not connected or characteristic not available.');
         return;
       }
-      toggleOn = !toggleOn;
-      toggleEl.classList.toggle('on', toggleOn);
-      toggleEl.setAttribute('aria-pressed', toggleOn ? 'true' : 'false');
-      toggleStateEl.textContent = toggleOn ? 'ON' : 'OFF';
+      toggleOn1 = !toggleOn1;
+      toggleEl1.classList.toggle('on', toggleOn1);
+      toggleEl1.setAttribute('aria-pressed', toggleOn1 ? 'true' : 'false');
+      toggleStateEl1.textContent = toggleOn1 ? 'ON' : 'OFF';
       errorEl.textContent = '';
       // const payload = new Uint8Array([ toggleOn ? 0x01 : 0x00 ]);
       // create string command istead of byte
-      var sw1 = toggleOn ? sw1On:sw1Off;
+      var sw1 = toggleOn1 ? sw1On:sw1Off;
       const encoder = new TextEncoder();
       const data = encoder.encode(sw1);
       try {
@@ -292,12 +307,43 @@
       } catch (err) {
         showError('Write failed: ' + (err && err.message));
         // revert toggle on failure
-        toggleOn = !toggleOn;
-        toggleEl.classList.toggle('on', toggleOn);
-        toggleEl.setAttribute('aria-pressed', toggleOn ? 'true' : 'false');
-        toggleStateEl.textContent = toggleOn ? 'ON' : 'OFF';
+        toggleOn1 = !toggleOn1;
+        toggleEl1.classList.toggle('on', toggleOn1);
+        toggleEl1.setAttribute('aria-pressed', toggleOn1 ? 'true' : 'false');
+        toggleStateEl1.textContent = toggleOn1 ? 'ON' : 'OFF';
       }
     });
+
+    let toggleOn2 = false;
+    toggleEl2.addEventListener('click', async () => {
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      toggleOn2 = !toggleOn2;
+      toggleEl2.classList.toggle('on', toggleOn2);
+      toggleEl2.setAttribute('aria-pressed', toggleOn2 ? 'true' : 'false');
+      toggleStateEl2.textContent = toggleOn2 ? 'ON' : 'OFF';
+      errorEl.textContent = '';
+      // const payload = new Uint8Array([ toggleOn ? 0x01 : 0x00 ]);
+      // create string command istead of byte
+      var sw2 = toggleOn2 ? sw2On:sw2Off;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(sw2);
+      try {
+        logStatus('Writing ' + data + ' to device...');
+        // await writeCharacteristic.writeValue(payload);
+        await writeCharacteristic.writeValue(data);
+        logStatus('Write complete.');
+      } catch (err) {
+        showError('Write failed: ' + (err && err.message));
+        // revert toggle on failure
+        toggleOn2 = !toggleOn2;
+        toggleEl2.classList.toggle('on', toggleOn2);
+        toggleEl2.setAttribute('aria-pressed', toggleOn2 ? 'true' : 'false');
+        toggleStateEl2.textContent = toggleOn2 ? 'ON' : 'OFF';
+      }
+    });    
 
     // Text send handling (new)
     async function sendText() {
