@@ -174,7 +174,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     sfs.addEventListener(SFS2X.SFSEvent.CONNECTION, onConnection, this);
     sfs.addEventListener(SFS2X.SFSEvent.CONNECTION_LOST, onConnectionLost, this);
 // update 1
-    // sfs.LagMonitor.Start();
+    // sfs.enableLagMonitor(true);
 
     // Add login-related event listeners during the SmartFox instance setup
     sfs.addEventListener(SFS2X.SFSEvent.LOGIN, onLogin, this);
@@ -303,7 +303,7 @@ export const GameServerProvider: React.FC<GameServerProviderProps> = ({ children
     var rmList = getRoomList();
     setRooms(rmList);
     sfs.send(new SFS2X.InitBuddyListRequest());
-    sfs.LagMonitor.Start();
+    sfs.enableLagMonitor(true);
   }
 
   function onLoginError(evt) {
