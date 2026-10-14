@@ -9,6 +9,7 @@ import {
   MapPin,
   Thermometer,
   Unplug,
+  SlidersHorizontal,
 } from 'lucide-react';
 import { UserAccountMenu } from './UserAccountMenu';
 import { useGameServer } from '@/hooks/useGameServer';
@@ -17,6 +18,19 @@ import { useAuth } from '@/hooks/useAuth';
 interface StatusBarProps {
   isConnected?: boolean;
 }
+
+const BasicControlLink = () => (
+  <a
+    href="/basiccontrol.html"
+    target="_blank"
+    rel="noopener noreferrer"
+    title="Open Basic Control"
+    className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-mono text-muted-foreground transition-colors hover:border-primary hover:text-foreground"
+  >
+    <SlidersHorizontal className="h-3.5 w-3.5" />
+    <span>Basic Control</span>
+  </a>
+);
 
 export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
   const { isGameServerConnected, isGameServerConnecting, isBuddyConnected, showReconnect, reconnect } = useGameServer();
@@ -141,12 +155,16 @@ export const StatusBar = ({ isConnected = true }: StatusBarProps) => {
             </span>
           </div>
 
+          {/* Basic Control Link */}
+          <BasicControlLink />
+
           {/* User Account Menu */}
           <UserAccountMenu />
         </div>
 
         {/* User Account Menu - mobile only (position/time hidden on mobile) */}
-        <div className="flex items-center sm:hidden">
+        <div className="flex items-center gap-2 sm:hidden">
+          <BasicControlLink />
           <UserAccountMenu />
         </div>
       </div>
