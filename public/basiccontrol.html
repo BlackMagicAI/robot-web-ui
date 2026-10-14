@@ -1,0 +1,566 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <!-- // goto: chrome://bluetooth-internals/#devices and select start scan to see list of devices and discover services -->
+  <!-- Run locally on mac using: python3 -m http.server 8000 -->
+  <!-- Then goto: localhost:8000 -->
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Basic Control</title>
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial; padding: 20px; max-width: 720px; margin: auto; }
+    h1 { font-size: 1.2rem; margin-bottom: 8px; }
+    .row { display:flex; gap:10px; align-items:center; margin: 10px 0; }
+    select, input[type="text"], button { padding: 8px; font-size: 0.95rem; }
+    .status { margin-top: 10px; color: #333; }
+    .switch {
+      --w: 56px; --h: 30px;
+      width: var(--w); height: var(--h); border-radius: var(--h);
+      background: #ddd; position: relative; cursor: pointer;
+      transition: background .12s;
+      display:inline-block;
+    }
+    .knob {
+      width: calc(var(--h) - 6px); height: calc(var(--h) - 6px);
+      background: white; border-radius: 50%;
+      position: absolute; top: 3px; left: 3px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.2);
+      transition: left .12s, transform .12s;
+    }
+    .switch.on { background: #2ecc71; }
+    .switch.on .knob { left: calc(100% - (var(--h) - 3px)); transform: translateX(-3px); }
+    .controls { margin-top: 16px; display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+    label.small { font-size: .9rem; color:#555; }
+    .note { font-size: .85rem; color:#666; margin-top:8px; }
+    .config { margin-top: 12px; border:1px solid #eee; padding:10px; border-radius:6px; background:#fafafa; }
+    .danger { color: #b31b1b; }
+    .text-send { display:flex; gap:8px; align-items:center; }
+    #textInput { min-width: 220px; flex:1; white-space: pre-wrap;}
+    /* Joystick styles */
+    .joystick-wrap { display:flex; gap:16px; align-items:center; }
+    .joystick {
+      width: 180px; height: 180px; border-radius: 50%;
+      background: linear-gradient(180deg,#fafafa,#eee);
+      border: 1px solid #ddd; position: relative; touch-action: none;
+      display:flex; align-items:center; justify-content:center;
+      box-shadow: inset 0 2px 6px rgba(0,0,0,0.04);
+    }
+    .stick {
+      width: 56px; height: 56px; border-radius: 50%;
+      background: radial-gradient(circle,#f6f5f7,#0062ff);
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      position: absolute; left: 50%; top: 50%;
+      transform: translate(-50%,-50%); transition: transform 120ms ease;
+      display:flex; align-items:center; justify-content:center; user-select:none;
+    }
+    .joy-output { display:flex; flex-direction:column; gap:6px; min-width:180px; }
+    .joy-output .row { display:flex; gap:8px; align-items:center; }
+    .joy-value { font-weight:600; min-width:64px; text-align:right; }
+    .small-muted { font-size: .85rem; color: #666; }
+    .controls-block { border:1px solid #eee; padding:12px; border-radius:6px; background:#fff; }    
+  </style>
+</head>
+<body>
+  <h1>Basic Control Center</h1>
+
+  <div class="row">
+    <button id="scanBtn">Scan / Add device</button>
+    <select id="deviceSelect" size="1" style="min-width:220px;">
+      <option value="">-- No device added --</option>
+    </select>
+    <button id="connectBtn" disabled>Connect</button>
+    <button id="disconnectBtn" disabled>Disconnect</button>
+  </div>
+
+  <div class="config">
+    <div class="row">
+      <label class="small">Service UUID</label>
+      <input type="text" id="serviceUuid" value="0000dfb0-0000-1000-8000-00805f9b34fb" style="flex:1" />
+    </div>
+    <div class="row">
+      <label class="small">Write Characteristic UUID</label>
+      <input type="text" id="charUuid" value="0000dfb1-0000-1000-8000-00805f9b34fb" style="flex:1" />
+    </div>
+    <div class="note">
+      Defaults shown are Nordic UART Service example (NUS). Change to match your device. The demo sends 0x01 on ON and 0x00 on OFF. The text sender encodes text as UTF-8.
+    </div>
+  </div>
+
+  <div class="controls">
+    <div>
+      <label class="small">Toggle Output 1</label>
+      <div id="toggle1" class="switch" aria-pressed="false" title="Toggle output (requires device connection)">
+        <div class="knob"></div>
+      </div>
+    </div>
+    <div style="margin-left:8px;">
+      <div class="small">State: <span id="toggleState1">OFF</span></div>
+    </div>
+    <div>
+      <label class="small">Toggle Output 2</label>
+      <div id="toggle2" class="switch" aria-pressed="false" title="Toggle output (requires device connection)">
+        <div class="knob"></div>
+      </div>
+    </div>
+    <div style="margin-left:8px;">
+      <div class="small">State: <span id="toggleState2">OFF</span></div>
+    </div> 
+
+    <!-- New text input + send button -->
+    <div class="text-send" style="margin-left: 10px;">
+      <label class="small" for="textInput">Send text</label>
+      <input id="textInput" type="text" placeholder="Type message to send" style=" white-space: pre-line;"/>
+      <button id="sendBtn" disabled>Send</button>
+    </div>
+  </div>
+
+    <!-- Joystick area -->
+    <div class="controls-block" style="display:flex; flex-direction:column; gap:10px;">
+      <label class="small">Virtual Joystick</label>
+      <div class="joystick-wrap">
+        <div id="joystick" class="joystick" aria-label="Virtual joystick">
+          <div id="stick" class="stick" role="slider" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+        <div class="joy-output">
+          <div class="row"><div class="small-muted">Angle:</div><div id="joyAngle" class="joy-value">—</div><div class="small-muted">deg</div></div>
+          <div class="row"><div class="small-muted">Radius:</div><div id="joyRadius" class="joy-value">—</div><div class="small-muted">%</div></div>
+          <div class="small-muted">Tip: drag inside the circle (mouse or touch). Release to return to center.</div>
+        </div>
+      </div>
+    </div>
+
+  <div class="status" id="status">Status: idle</div>
+  <div class="note">You must run this page from a secure origin (https or http://localhost). Browser will show a chooser for scanning.</div>
+  <div class="note danger" id="error"></div>
+
+  <script>
+    // Bluetooth commands
+    const sw1Off = "h0,0\n";
+    const sw1On = "h1,0\n";
+    const sw2Off = "i0,0\n";
+    const sw2On = "i1,0\n";
+    let cmdKeyPast = 'stop';
+    let isWriting = false;
+    // Devices map: id -> BluetoothDevice and extra metadata
+    const devices = new Map();
+    let connectedDevice = null;
+    let gattServer = null;
+    let writeCharacteristic = null;
+
+    const scanBtn = document.getElementById('scanBtn');
+    const connectBtn = document.getElementById('connectBtn');
+    const disconnectBtn = document.getElementById('disconnectBtn');
+    const deviceSelect = document.getElementById('deviceSelect');
+    const serviceInput = document.getElementById('serviceUuid');
+    const charInput = document.getElementById('charUuid');
+    const statusEl = document.getElementById('status');
+    const errorEl = document.getElementById('error');
+    const toggleEl1 = document.getElementById('toggle1');
+    const toggleStateEl1 = document.getElementById('toggleState1');
+    const toggleEl2 = document.getElementById('toggle2');
+    const toggleStateEl2 = document.getElementById('toggleState2');
+
+    // New elements
+    const textInput = document.getElementById('textInput');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Joystick elements
+    const joystick = document.getElementById('joystick');
+    const stick = document.getElementById('stick');
+    const joyAngleEl = document.getElementById('joyAngle');
+    const joyRadiusEl = document.getElementById('joyRadius');
+
+    function logStatus(text) {
+      statusEl.textContent = 'Status: ' + text;
+      console.debug(text);
+    }
+    function showError(text) {
+      errorEl.textContent = text || '';
+      console.error(text);
+    }
+
+    function updateUI() {
+      const hasSelection = !!deviceSelect.value;
+      connectBtn.disabled = !hasSelection;
+      disconnectBtn.disabled = !connectedDevice;
+      toggleEl1.style.opacity = connectedDevice ? '1' : '0.5';
+      toggleEl1.style.pointerEvents = connectedDevice ? 'auto' : 'none';
+      toggleEl2.style.opacity = connectedDevice ? '1' : '0.5';
+      toggleEl2.style.pointerEvents = connectedDevice ? 'auto' : 'none';
+      // enable send button only when connected and characteristic available
+      sendBtn.disabled = !connectedDevice || !writeCharacteristic;
+      textInput.disabled = !connectedDevice || !writeCharacteristic;
+    }
+
+    function addDeviceToList(device) {
+      if (!device) return;
+      if (devices.has(device.id)) return;
+      devices.set(device.id, device);
+      const opt = document.createElement('option');
+      opt.value = device.id;
+      opt.textContent = device.name || device.id;
+      deviceSelect.appendChild(opt);
+      deviceSelect.value = device.id;
+      updateUI();
+    }
+
+    // "Scan / Add device" click: open chooser and add selected device to dropdown
+    scanBtn.addEventListener('click', async () => {
+      errorEl.textContent = '';
+      try {
+        const serviceUuid = serviceInput.value.trim() || undefined;
+        logStatus('Requesting device via browser chooser...');
+        const filters = serviceUuid ? [{services: [serviceUuid]}] : [];
+        const options = filters.length ? {filters} : {acceptAllDevices: true, optionalServices: serviceUuid ? [serviceUuid] : []};
+        const device = await navigator.bluetooth.requestDevice(options);
+        addDeviceToList(device);
+        logStatus('Device added: ' + (device.name || device.id));
+      } catch (err) {
+        showError('Scan cancelled or failed: ' + (err && err.message));
+        logStatus('idle');
+      }
+    });
+
+    connectBtn.addEventListener('click', async () => {
+      errorEl.textContent = '';
+      const selectedId = deviceSelect.value;
+      if (!selectedId) return showError('Select a device first.');
+      const device = devices.get(selectedId);
+      if (!device) return showError('Device not found in list.');
+
+      try {
+        logStatus('Connecting to ' + (device.name || device.id) + ' ...');
+        gattServer = await device.gatt.connect();
+        connectedDevice = device;
+        device.addEventListener('gattserverdisconnected', onDisconnected);
+
+        const serviceUuid = serviceInput.value.trim();
+        const charUuid = charInput.value.trim();
+        if (!serviceUuid || !charUuid) {
+          showError('Service and Characteristic UUIDs must be set to get the write characteristic.');
+          updateUI();
+          return;
+        }
+        logStatus('Getting primary service ' + serviceUuid + ' ...');
+        const service = await gattServer.getPrimaryService(serviceUuid);
+        logStatus('Getting characteristic ' + charUuid + ' ...');
+        writeCharacteristic = await service.getCharacteristic(charUuid);
+        logStatus('Connected and characteristic obtained.');
+        updateUI();
+      } catch (err) {
+        showError('Connection failed: ' + (err && err.message));
+        logStatus('idle');
+      }
+    });
+
+    disconnectBtn.addEventListener('click', async () => {
+      if (!connectedDevice) return;
+      try {
+        logStatus('Disconnecting...');
+        connectedDevice.gatt.disconnect();
+      } catch (err) {
+        console.warn('Error during disconnect', err);
+      } finally {
+        cleanupConnection();
+        logStatus('idle');
+      }
+    });
+
+    function onDisconnected(evt) {
+      showError('Device disconnected.');
+      cleanupConnection();
+      updateUI();
+    }
+
+    function cleanupConnection() {
+      writeCharacteristic = null;
+      gattServer = null;
+      if (connectedDevice) {
+        try { connectedDevice.removeEventListener('gattserverdisconnected', onDisconnected); } catch {}
+      }
+      connectedDevice = null;
+      updateUI();
+    }
+
+    // Toggle UI handling
+    let toggleOn1 = false;
+    toggleEl1.addEventListener('click', async () => {
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      toggleOn1 = !toggleOn1;
+      toggleEl1.classList.toggle('on', toggleOn1);
+      toggleEl1.setAttribute('aria-pressed', toggleOn1 ? 'true' : 'false');
+      toggleStateEl1.textContent = toggleOn1 ? 'ON' : 'OFF';
+      errorEl.textContent = '';
+      // const payload = new Uint8Array([ toggleOn ? 0x01 : 0x00 ]);
+      // create string command istead of byte
+      var sw1 = toggleOn1 ? sw1On:sw1Off;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(sw1);
+      try {
+        logStatus('Writing ' + data + ' to device...');
+        // await writeCharacteristic.writeValue(payload);
+        await writeCharacteristic.writeValue(data);
+        logStatus('Write complete.');
+      } catch (err) {
+        showError('Write failed: ' + (err && err.message));
+        // revert toggle on failure
+        toggleOn1 = !toggleOn1;
+        toggleEl1.classList.toggle('on', toggleOn1);
+        toggleEl1.setAttribute('aria-pressed', toggleOn1 ? 'true' : 'false');
+        toggleStateEl1.textContent = toggleOn1 ? 'ON' : 'OFF';
+      }
+    });
+
+    let toggleOn2 = false;
+    toggleEl2.addEventListener('click', async () => {
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      toggleOn2 = !toggleOn2;
+      toggleEl2.classList.toggle('on', toggleOn2);
+      toggleEl2.setAttribute('aria-pressed', toggleOn2 ? 'true' : 'false');
+      toggleStateEl2.textContent = toggleOn2 ? 'ON' : 'OFF';
+      errorEl.textContent = '';
+      // const payload = new Uint8Array([ toggleOn ? 0x01 : 0x00 ]);
+      // create string command istead of byte
+      var sw2 = toggleOn2 ? sw2On:sw2Off;
+      const encoder = new TextEncoder();
+      const data = encoder.encode(sw2);
+      try {
+        logStatus('Writing ' + data + ' to device...');
+        // await writeCharacteristic.writeValue(payload);
+        await writeCharacteristic.writeValue(data);
+        logStatus('Write complete.');
+      } catch (err) {
+        showError('Write failed: ' + (err && err.message));
+        // revert toggle on failure
+        toggleOn2 = !toggleOn2;
+        toggleEl2.classList.toggle('on', toggleOn2);
+        toggleEl2.setAttribute('aria-pressed', toggleOn2 ? 'true' : 'false');
+        toggleStateEl2.textContent = toggleOn2 ? 'ON' : 'OFF';
+      }
+    });    
+
+    // Text send handling (new)
+    async function sendText() {
+      errorEl.textContent = '';
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      const text = textInput.value || '';
+      if (!text) return showError('Enter text to send.');
+      logStatus('Writing text -1 (' + text + ') ...');
+      try {
+        const formattedText = text.replace(/\r?\\n/g, String.fromCharCode(10));//hack to prevent input field from stripping newlines
+        const encoder = new TextEncoder();
+        const data = encoder.encode(formattedText); // UTF-8
+        logStatus('Writing text (' + data + ') ...');
+        await writeCharacteristic.writeValue(data);
+        logStatus('Text write complete.');
+      } catch (err) {
+        showError('Text write failed: ' + (err && err.message));
+      }
+    }
+
+    sendBtn.addEventListener('click', async () => {
+      await sendText();
+    });
+
+    // allow Enter in the text input to send
+    textInput.addEventListener('keydown', async (ev) => {
+      if (ev.key === 'Enter') {
+        ev.preventDefault();
+        await sendText();
+      }
+    });
+
+    // Populate from navigator.bluetooth.getDevices() if available (previously authorized)
+    async function loadPreviouslyAllowedDevices() {
+      if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
+      try {
+        const prev = await navigator.bluetooth.getDevices();
+        for (const d of prev) addDeviceToList(d);
+        if (prev.length) logStatus('Loaded previously authorized devices.');
+      } catch (err) {
+        console.debug('getDevices not available or failed:', err);
+      }
+    }
+
+    // Keep UI updated when selection changes
+    deviceSelect.addEventListener('change', () => updateUI());
+
+    // init
+    updateUI();
+    loadPreviouslyAllowedDevices();
+
+    // Helpful note: ensure page runs over secure origin
+    if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+      showError('Web Bluetooth requires a secure context. Run over https or from http://localhost.');
+    }
+
+    // -------------------------
+    // Virtual joystick logic
+    // -------------------------
+    let activePointerId = null;
+    let maxRadius = 1; // px, will be set after measuring
+    let center = { x: 0, y: 0 };
+    let returning = false;
+
+    function measureJoystick() {
+      const rect = joystick.getBoundingClientRect();
+      center.x = rect.width / 2;
+      center.y = rect.height / 2;
+      // maximum distance the stick center can move from center (keep inside container)
+      maxRadius = Math.min(rect.width, rect.height) / 2 - Math.max(stick.offsetWidth, stick.offsetHeight) / 2 - 4;
+    }
+
+    function updateJoystickDisplay(dx, dy) {
+      // dx, dy are pixels relative to center, already clamped to maxRadius
+      stick.style.transition = 'transform 0s';
+      stick.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      const radius = (dist/maxRadius);
+      const radiusPct = Math.min(100, radius * 100);
+      // angle: 0 = right, 90 = up. We flip y (screen y grows down).
+      const angleRad = Math.atan2(-dy, dx);
+      let angleDeg = (angleRad * 180 / Math.PI + 360) % 360;
+      if (isNaN(angleDeg)) angleDeg = 0;
+
+      joyAngleEl.textContent = angleDeg.toFixed(1);
+      joyRadiusEl.textContent = radiusPct.toFixed(1);
+
+      handleJoystickMove(angleDeg.toFixed(1), Math.min(1, radius));
+    }
+
+    async function handleJoystickMove (angle, distance) {
+
+    if (isWriting) {
+      console.warn("GATT operation in progress. Command ignored");
+      return; 
+    }
+    let cmdKey = 'stop';
+    let cmd = '';
+    if (angle >= 45 && angle <= 135 && distance > .75) cmdKey = 'forward';
+    else if (angle < 225 && angle > 135 && distance > .75) cmdKey = 'left';
+    else if ((angle < 45 || angle > 320) && distance > .75) cmdKey = 'right';
+    else if (angle >= 225 && angle <= 320 && distance > .75) cmdKey = 'backwards';
+
+      if (!writeCharacteristic) {
+        showError('Not connected or characteristic not available.');
+        return;
+      }
+      switch (cmdKey) {
+        case 'forward':
+          cmd = 'e180,0\nf0,0\n';
+          break;
+        case 'left':
+          cmd = 'e0,0\nf0,0\n';
+          break;
+        case 'right':
+          cmd = 'e0,0\nf0,0\n';
+          break;
+        case 'backwards':
+          cmd = 'e0,0\nf180,0\n';
+          break;          
+        default:
+          // Code runs if no cases match
+          cmd = "e90,0\nf90,0\n";
+      }
+      if(cmdKeyPast !== cmdKey){
+        const encoder = new TextEncoder();
+        const data = encoder.encode(cmd); // UTF-8
+        try {
+          isWriting = true;
+          const encoder = new TextEncoder();
+          const data = encoder.encode(cmd);
+          await writeCharacteristic.writeValue(data);
+        } catch (error) {
+          console.error("Write failed:", error);
+        } finally {
+          isWriting = false; // Always clears the lock, even if it errors
+        }
+      }
+      cmdKeyPast = cmdKey;
+    };
+
+    function resetJoystickToCenter(animated = true) {
+      returning = true;
+      if (animated) {
+        stick.style.transition = 'transform 140ms ease';
+      } else {
+        stick.style.transition = 'transform 0s';
+      }
+      stick.style.transform = 'translate(-50%,-50%)';
+      joyAngleEl.textContent = '0.0';
+      joyRadiusEl.textContent = '0.0';
+      // after animation ends, clear returning flag
+      setTimeout(() => { returning = false; }, 160);
+    }
+
+    // Pointer handlers
+    joystick.addEventListener('pointerdown', (ev) => {
+      ev.preventDefault();
+      joystick.setPointerCapture(ev.pointerId);
+      activePointerId = ev.pointerId;
+      measureJoystick();
+      handlePointerMove(ev.clientX, ev.clientY);
+    });
+
+    joystick.addEventListener('pointermove', (ev) => {
+      if (activePointerId !== ev.pointerId) return;
+      ev.preventDefault();
+      handlePointerMove(ev.clientX, ev.clientY);
+    });
+
+    function handlePointerMove(clientX, clientY) {
+      const rect = joystick.getBoundingClientRect();
+      const x = clientX - rect.left;
+      const y = clientY - rect.top;
+      let dx = x - center.x;
+      let dy = y - center.y;
+      const dist = Math.sqrt(dx*dx + dy*dy);
+      if (dist > maxRadius) {
+        const scale = maxRadius / dist;
+        dx *= scale;
+        dy *= scale;
+      }
+      updateJoystickDisplay(dx, dy);
+    }
+
+    function pointerUpCleanup(ev) {
+      if (activePointerId === null) return;
+      if (ev && ev.pointerId !== activePointerId) return;
+      try {
+        joystick.releasePointerCapture(activePointerId);
+      } catch (e) {}
+      activePointerId = null;
+      // animate back to center
+      resetJoystickToCenter(true);
+    }
+
+    joystick.addEventListener('pointerup', pointerUpCleanup);
+    joystick.addEventListener('pointercancel', pointerUpCleanup);
+    joystick.addEventListener('pointerleave', (ev) => {
+      // If we are dragging and pointer leaves, still return to center on pointerup.
+      if (activePointerId === ev.pointerId) {
+        pointerUpCleanup(ev);
+      }
+    });
+
+    // Make sure the joystick re-measures on resize
+    window.addEventListener('resize', measureJoystick);
+    // initial measure
+    setTimeout(measureJoystick, 50);
+
+    // set initial output
+    joyAngleEl.textContent = '0.0';
+    joyRadiusEl.textContent = '0.0';    
+  </script>
+</body>
+</html>
